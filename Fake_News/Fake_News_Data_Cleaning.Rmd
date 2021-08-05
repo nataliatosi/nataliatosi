@@ -1,0 +1,441 @@
+---
+title: "Fake_News_Data_Cleaning"
+author: "Natália Tosi"
+date: "8/3/2021"
+output: pdf_document
+---
+
+```{r message = FALSE, warning = FALSE, include = FALSE}
+
+knitr::opts_chunk$set(
+  echo = TRUE,
+  message = FALSE,
+  warning = FALSE,
+  fig.align = "center",
+  fig.width = 8, 
+  fig.height = 4
+  )
+
+options(scipen = 999)
+
+library(tidyverse)
+library(fastDummies)
+library(broom) 
+library(stargazer)
+
+```
+
+\bigskip
+
+# Importing Data and Labels
+
+\bigskip
+
+```{r}
+
+data_raw_port <- read_csv(
+  "BANCO_NACIONAL_FAKENEWS_2021-08-03_CLEAN - label.csv")
+
+variable_names <- read_csv(
+  "BANCO_NACIONAL_FAKENEWS_2021-08-03_CLEAN - variable_names.csv")
+
+answers_labels <- read_csv(
+  "BANCO_NACIONAL_FAKENEWS_2021-08-03_CLEAN - answers_translated.csv")
+
+```
+
+\bigskip
+
+# Translating Document
+
+\bigskip
+
+```{r}
+
+data_clean <- as_tibble(data_raw_port)
+colnames(data_clean) <- as_vector(variable_names[,2])
+
+data_eng <- data_clean
+data_eng[-c(1,2,3,7)] <- lapply(data_clean[-c(1,2,3,7)], 
+      function(x) answers_labels$answers_eng[match(x, 
+                                        answers_labels$answers_port)])
+
+```
+
+\bigskip
+
+Save as new CSV file
+
+\bigskip
+
+```{r}
+
+write.csv(data_eng,'fake_news_db_english.csv')
+
+```
+
+\bigskip
+
+# Summary Statistics
+
+\bigskip
+
+```{r}
+
+data_eng <- data_eng %>%
+  mutate(
+    evaluation = case_when(
+    P1 %in% c("Excellent", "Good") ~ "Excellent/Good",
+    P1 %in% c("Bad", "Terrible") ~ "Bad/Terrible",
+    TRUE ~ P1),
+    approval = case_when(
+      P2 %in% c("Strongly approves", "Approves") ~ "Approves",
+      P2 %in% c("Strongly disapproves", "Disapproves") ~ "Disapproves",
+      TRUE ~ P2))
+
+
+data_fake_news_dem <- data_eng %>%
+  select(idInterview, state, region, type, sex, age_full, age_60, evaluation, 
+         approval, P4, P19, P20, P21, P23_1, P23_2, P23_3, P23_4, P23_5, 
+         education_full, race, religion_full, income_full, class_full, age_50, 
+         education, income, class, religion) %>%
+  mutate(shared_fake_news = if_else(P19 == "Yes", 1, 0))
+
+
+data_fake_news_dem <- data_fake_news_dem %>%
+  mutate(sex = factor(sex, levels = c("Men", "Women")),
+         region = factor(region, levels = c("North", "Northeast", "Center-West", 
+                                   "Southeast", "South")),
+         type = factor(type, levels = c("Capital", "Metropolitan region", 
+                                        "Countryside")),
+         evaluation = factor(evaluation, levels = c("Excellent/Good", "Regular", 
+                                        "Bad/Terrible", "Unsure")),
+         approval = factor(approval, levels = c("Approves", 
+                                     "Neither approves nor disapproves",
+                                      "Disapproves", "Unsure")),
+         P4 = factor(P4, levels = c("Right/Center-Right", "Center", 
+                                    "Left/Center-Left", 
+                            "I no longer have a defined political orientation",
+                            "I never had a political orientation", "Unsure")),
+         race = factor(race, levels = c("White", "Black", "Pardo (brown)", 
+                                        "Indigenous", "Yellow", "Other")),
+         education = factor(education, levels = c("No education", "Elementary School", 
+                                       "High School", "Higher Education")),
+         income = factor(income, levels = c("Up to 1 MW", "1 to 3 MWs", "3 to 6 MWs", 
+                                    "More than 6 MWs", "Did not answer")),
+         class = factor(class, levels = c("A/B", "C", "D/E", "DN/DA")),
+         religion = factor(religion, levels = c("Catholic", "Evangelicals", 
+                                      "Other religion", "No religion")))
+
+
+#data_fake_news_dem <- data_fake_news_dem %>%
+ # mutate_if(is.character, as.factor) %>%
+  #dummy_cols(select_columns = c("region", "type", "sex", "evaluation", 
+   #      "approval", "P4", "P19", "P20", "P21", "P23_1", "P23_2", "P23_3", 
+    #     "P23_4", "P23_5", "race", "education", "income", "class", "religion"))
+
+
+```
+
+#DEMOGRAPHICS
+
+Sex
+
+```{r}
+
+data_fake_news_dem %>%
+  count(sex) %>%
+  mutate(share = n/sum(n))
+
+```
+
+Region
+
+```{r}
+
+data_fake_news_dem %>%
+  count(region) %>%
+  mutate(share = n/sum(n))
+
+```
+
+City type
+
+```{r}
+
+data_fake_news_dem %>%
+  count(type) %>%
+  mutate(share = n/sum(n))
+
+
+```
+Age
+
+```{r}
+
+data_fake_news_dem %>%
+   summarise(mean = mean(age_full),
+             median = median(age_full),
+             sd = sd(age_full))
+
+```
+
+Political Orientation
+
+```{r}
+
+data_fake_news_dem <- rename(data_fake_news_dem, pol_orientation = P4)
+
+data_fake_news_dem %>%
+  count(pol_orientation) %>%
+  mutate(share = n/sum(n))
+
+```
+
+Government Approval Rating
+
+```{r}
+
+data_fake_news_dem %>%
+  count(approval) %>%
+  mutate(share = n/sum(n))
+
+```
+
+
+Race
+
+```{r}
+
+data_fake_news_dem %>%
+  count(race) %>%
+  mutate(share = n/sum(n))
+
+```
+
+
+Education
+
+```{r}
+
+data_fake_news_dem %>%
+  count(education) %>%
+  mutate(share = n/sum(n))
+
+```
+
+Class
+
+```{r}
+
+data_fake_news_dem %>%
+  count(class) %>%
+  mutate(share = n/sum(n))
+
+```
+
+Religion
+
+```{r}
+
+data_fake_news_dem %>%
+  count(religion) %>%
+  mutate(share = n/sum(n))
+
+```
+
+
+# DUMMIES
+
+  sex_men: 1 Men, 0 Women;
+  region: 5 levels;
+  capital_metrop: 1 Capital and Metropolitan region, 0 Countryside;
+  approvaes_gov: 1 Approves, 0 Neither approves nor disapproves, Disapproves, Unsure;
+  pol_orientation: Right/Center-Right, Center, Left/Center-Left, No orientation 
+        (I no longer have a defined political orientation, I never had a political
+        orientation, Unsure);
+  race_is_white: 1 White, 0 Black, Pardo (brown), Indigenous, Yellow, Other;
+  education_high: 1 High School and Higher Education, 0 No education and Elementary School, 
+  income_low: 1 Up to 1 MW, 1 to 3 MWs, and Did not answer, 0 3 to 6 MWs and 
+        More than 6 MWs;
+  class: 3 levels: A/B, C, D/E and DN/DA;
+  religion: 4 levels: Catholic, Evangelicals, Other religion, No religion
+
+
+```{r}
+
+data_fake_news_dem <- data_fake_news_dem %>%
+  mutate(sex_men = if_else(sex == "Men", 1, 0)) %>%
+  dummy_cols(select_columns = c("region")) %>%
+  mutate(capital_metrop = if_else(type %in% c("Capital", "Metropolitan region"), 1, 0),
+         approves_gov = if_else(approval == "Approves", 1, 0),
+         pol_orientation_right = if_else(pol_orientation == "Right/Center-Right", 1, 0),
+         pol_orientation_center = if_else(pol_orientation == "Center", 1, 0),
+         pol_orientation_left = if_else(pol_orientation == "Left/Center-Left", 1, 0),
+         pol_orientation_none = if_else(pol_orientation %in% c(
+           "I no longer have a defined   political orientation", 
+           "I never had a political orientation", "Unsure"), 1, 0),
+         race_is_white = if_else(race == "White", 1, 0),
+         education_high = if_else(education %in% c("High School", "Higher Education"), 1, 0),
+         income_low = if_else(income %in% c("Up to 1 MW", "1 to 3 MWs", "Did not answer"),
+                              1, 0),
+         class_ab = if_else(class == "A/B", 1, 0),
+         class_c = if_else(class == "C", 1, 0),
+         class_de = if_else(class %in% c("D/E", "DN/DA"), 1, 0)) %>%
+  dummy_cols(select_columns = c("religion"))
+
+```
+
+
+
+# LIKELIHOOD OF SHARING FAKE NEWS
+
+
+```{r}
+
+data_fake_news_dem %>%
+  count(shared_fake_news) %>%
+  mutate(share = n/sum(n))
+
+```
+
+
+```{r}
+
+sapply(data_fake_news_dem,function(x) sum(is.na(x)))
+sapply(data_fake_news_dem, function(x) length(unique(x)))
+
+```
+
+
+
+
+
+Model 1 - Only demographics
+
+```{r}
+
+model_1 <- glm(shared_fake_news ~ sex_men + age_full + race_is_white + 
+                education_high + income_low + class_c,
+               family = binomial(link = 'logit'),
+               data = data_fake_news_dem)
+
+summary(model_1)
+
+```
+
+Model 2 - Demographics + Political Orientation
+
+```{r}
+
+model_2 <- glm(shared_fake_news ~ sex_men + age_full + race_is_white + 
+                education_high + income_low + class_c + pol_orientation_right +
+                pol_orientation_center + pol_orientation_left,
+               family = binomial(link = 'logit'),
+               data = data_fake_news_dem)
+
+summary(model_2)
+
+```
+
+
+Model 3 - Demographics + Political Orientation + City and Region
+
+
+```{r}
+
+model_3 <- glm(shared_fake_news ~ sex_men + age_full + race_is_white + 
+                education_high + income_low + class_c + pol_orientation_right +
+                pol_orientation_center + pol_orientation_left + region_North +
+                region_Northeast + `region_Center-West` + region_Southeast + 
+                 capital_metrop,
+               family = binomial(link = 'logit'),
+               data = data_fake_news_dem)
+
+summary(model_3)
+
+```
+
+Model 4 - Demographics + Political Orientation + City and Region + Religion
+
+
+```{r}
+
+model_4 <- glm(shared_fake_news ~ sex_men + age_full + race_is_white + 
+                education_high + income_low + class_c + pol_orientation_right +
+                pol_orientation_center + pol_orientation_left + region_North +
+                region_Northeast + `region_Center-West` + region_Southeast + 
+                 capital_metrop + religion_Catholic + religion_Evangelicals + 
+                 `religion_Other religion`,
+               family = binomial(link = 'logit'),
+               data = data_fake_news_dem)
+
+summary(model_4)
+
+```
+
+```{r, results = 'asis', message = FALSE}
+
+stargazer(model_1, model_2, model_3, model_4,
+          title = "Logit Models Comparison", 
+          type = "latex", 
+          digits = 3, 
+          no.space = TRUE, 
+          model.numbers = FALSE,
+          header = FALSE,
+          column.sep.width = "-15pt")
+
+```
+
+
+
+
+
+balance_table <- data_fake_news_dem %>%
+  select(29:113) %>%
+  lapply(., function(i) tidy(t.test(i ~ data_fake_news_dem$shared_fake_news))) %>%
+  do.call(rbind, .) %>%
+  rownames_to_column("variable") %>%
+  rename(mean_diff = estimate, mean_control = estimate1, 
+         mean_treatment = estimate2) %>%
+  select(variable, mean_diff, mean_control, mean_treatment, statistic, p.value)
+
+kable(balance_table, 
+      caption = "Balance Table - Observable Characteristics",
+      digits = 3,
+      align = "c")
+
+
+colnames(data_fake_news_dem)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

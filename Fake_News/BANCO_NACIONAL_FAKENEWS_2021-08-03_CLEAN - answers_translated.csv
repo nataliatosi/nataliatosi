@@ -1,0 +1,245 @@
+answers_port,answers_eng
+Nordeste,Northeast
+Sudeste,Southeast
+Norte,North
+Sul,South
+Centro-Oeste,Center-West
+Interior,Countryside
+Capital,Capital
+RM,Metropolitan region
+Homens,Men
+Mulheres,Women
+16 a 24 anos,16-24 age
+25 a 34 anos,25-34 age
+35 a 44 anos,35-44 age
+45 a 59 anos,45-59 age
+60 ou mais,60 or more
+Regular,Regular
+Pessimo,Terrible
+Bom,Good
+Ruim,Bad
+Nao sabe,Unsure
+otimo,Excellent
+"Nao aprovo, nem desaprovo",Neither approves nor disapproves
+Desaprovo totalmente,Strongly disapproves
+Aprovo totalmente,Strongly approves
+Desaprovo,Disapproves
+Aprovo,Approves
+Pouca,Not very much
+Nenhuma,None at all
+Muita,Great deal
+Alguma,Fair amount
+Direita/ Centro-Direita,Right/Center-Right
+Esquerda/ Centro-Esquerda,Left/Center-Left
+Centro,Center
+Ja tive posicao politica e hoje nao tenho mais,I no longer have a defined political orientation
+Nunca tive posicao politica,I never had a political orientation
+Nao sei,Unsure
+Algumas vezes tenho interesse,Mildly interested
+Extremamente interessado,Extremely interested
+Muito interessado,Quite interested
+Nao muito interessado,Minimally interested
+Nao tenho interesse,Not interested
+Uma vez por semana,Once a week
+Mais de uma vez por dia,More than once a day
+Algumas vezes por semana,a few times a week
+Uma vez por dia,Once a day
+Menos que uma vez por semana,Less than once a week
+Nao consumo noticias,Never
+Jornal impresso,Printed newspaper
+Jornal digital,Online newspaper
+Revistas impressas,Printed magazines
+Revistas digitais,Online magazines
+Radio,Radio
+Televisao,Television
+Sites alternativos de noticias,Alternative news services
+WhatsApp ou telefone,WhatsApp or telephone
+"Por amigos, familiares ou conhecidos","Friends, family, or acquaintances"
+Pelas redes sociais,Social media
+Podcasts,Podcasts
+Nenhuma das opcões anteriores,None of the above
+Conforto,Convenience
+Facilidade de acesso,Ease of access
+Conteudo confiavel,Trusted content
+Conteudo de facil leitura,Easy to read content
+Gratuidade ou preco baixo,Free access or low price
+Outro,Other
+Instagram,Instagram
+Facebook,Facebook
+WhatsApp,WhatsApp
+TikTok,TikTok
+Twiter,Twiter
+Youtube,Youtube
+LinkedIn,LinkedIn
+Publicacao digital,Online version
+Publicacao impressa,Printed version
+TV/Canal por assinatura/ Streaming,TV (paid or free)/ Streaming
+Site noticioso/ agencia de noticia,News site/news agency
+Canal no YouTube,YouTube channel
+Canal de audio/Podcast,Audio Channel/Podcast
+Nenhum desses,None of the above
+Celular,Celular
+PC/desktop,PC/desktop
+LapTop/notebook,LapTop/notebook
+Tablet,Tablet
+Nao acesso midias digitais,I don't access online/digital media
+SmartTV,SmartTV
+Confio muito,Great deal
+Confio pouco,Not very much
+Nao utiliza,Does not use
+Nao confio nada,No trust at all
+Videos ou textos de noticias mais longos,Longer and in-depth news videos and texts
+Videos ou textos de noticias mais curtos,Shorter and concise news videos and texts
+Indiferente/Tanto faz,Indifferent
+Depende do conteudo dos videos ou textos de noticias,It depends on the content of the news videos and texts
+Noticias de diferentes pontos de vista,News from sources with different points of view
+Noticias de fontes que compartilham seu ponto de vista/ emitem suas opiniões,News from sources who share your point of view
+Noticias de fontes que nao possuem um ponto particular/ nao emitem suas opiniões,News from sources that don't have a particular political preference/do not express their opinion
+"Le, assiste ate o fim",Read/watch until the end
+Ignora/Nem le,Ignores
+Comenta,Comments
+Denuncia,Reports
+"Eu reajo a noticia jornalistica (ex. curtir, odiar, favoritar, etc)","I react to journalistic news (eg like, hate, favorite, etc.)"
+Eu comento a noticia jornalistica nas redes sociais ou site,I comment on journalistic news on social media or website
+Eu escrevo sobre a noticia jornalistica ou sobre o assunto,I write about journalistic news or about the subject
+Eu compartilho a noticia jornalistica com conhecidos,I share journalistic news with people I know
+Eu participo de votacao online em sites jornalisticos ou redes sociais,I participate in online polls on news sites or social media
+Eu participo de campanha ou grupo sobre um assunto jornalistico especifico,I participate in a campaign or group about a specific journalistic subject
+Eu converso com amigos ou colegas sobre noticias jornalisticas,I talk to friends or colleagues about the news.
+Nenhuma das alternativas anteriores,None of the above
+Nao confia,Not at all
+"Sim, mais ou menos","Yes, a fair amount"
+"Sim, pouco","Yes, but not very much"
+"Sim, muito","Yes, a great deal"
+Nao,No
+Sim,Yes
+Frequentemente,Often
+as vezes,Sometimes
+Raramente,Hardly ever
+Nunca,Never
+Enviei uma mensagem apenas avisando que a informacao nao era verdadeira,I just sent a message warning that the information was not true
+"Nao avisei, porem nao compartilhei mais a mesma informacao","I didn't send a warning, but I also didn't share the same information anymore"
+Enviei uma mensagem avisando que a informacao nao era verdadeira junto a informacao correta,I sent a message warning that the information was not true along with the correct information
+Continuei compartilhando a informacao,I kept sharing the information
+Muita responsabilidade,A great deal of responsibility
+Pouca responsabilidade,Not much responsibility
+Alguma responsabilidade,A fair amount of responsibility
+Nenhuma responsabilidade,No responsibility at all
+Mais ou menos impactado,Moderate
+Muito impactado,Major
+Pouco impactado,Minor
+Nao e impactado,Not impacted at all
+"Governo, politicos ou de partidos politicos do meu pais","Government, politicians, or political parties in my country"
+Pessoas em geral,People in general
+Nao estou preocupado com isso,I am not worried about it
+Jornalistas ou empresas jornalisticas,Journalists or the press
+Amigos e familiares,Friends and family
+Ativistas ou grupo de ativistas,Activists or groups of activists
+Cientistas,Scientists
+Influencers/Celebridades,Influencers/Celebrities
+"Governo, politicos ou de partidos politicos de outros paises (internacional)","Government, politicians, or political parties from other countries (international)"
+"Sim, sempre","Yes, always"
+Nao/Nenhuma,Never
+"Sim, poucas vezes","Yes, rarely"
+"Sim, muitas vezes","Yes, occasionally"
+Nunca ouvi falar em agencias de checagens,Never heard of fact-checking agencies
+Nao compartilha,Never
+Governo,Government
+Poder Judiciario,Judiciary
+Poder Legislativo,Legislative
+"Forcas Armadas (Exercito, Marinha, Aeronautica)","Armed Forces (Military, Navy, Air force)"
+Policia,Police
+Universidades / cientistas,Academia/Scientists
+Comercio,Businesses
+Industria e/ou agronegocio,Industry and/or Agribusiness
+Igreja,Church
+Imprensa,Press
+Ordem dos advogados – OAB,Bar Association - OAB
+ONGs,NGOs
+Instituicões Bancarias,Banking Institutions
+"Sim, para pior","Yes, for worse"
+"Sim, para melhor","Yes, for better"
+Nao alterou em nada,It did not change
+Discordo,Disagree
+Concordo,Agree
+Medicos e profissionais da saude,Doctors and Healthcare professionals
+OMS / Anvisa,WHO/Anvisa
+Governo Estadual/Municipal,State/Municipal government
+Governo Federal,Federal government
+Redes sociais,Social media
+Aumentou muito,Increased a great deal
+Aumentou um pouco,Increased a fair amount
+Diminuiu um pouco,Decreased a fair amount
+Nao mudou,No change at all
+Diminuiu muito,Decreased a great deal
+Nao confio,Don't trust
+Urna eletrônica,Electronic ballot
+Voto impresso (impressao do voto da urna eletrônica),Printed vote (from the electronic ballot)
+Voto em papel (depositado em uma caixa),In paper vote (dropped in the ballot box)
+Tanto faz,Either one of the above
+Pouco preocupado,Slightly worried
+Muito preocupado,Very worried
+Nada preocupado,Not worried
+Agilidade na contagem de votos,Agility/speed in counting votes
+Confianca na independencia e confiabilidade da justica eleitoral,Confidence in the independence and reliability of the electoral justice
+Garantia de que nao ha interferencia externa (de outros paises),Guaranteeing that there is no external interference (from other countries)
+Garantia de que nao ha interferencia interna (dentro do Brasil),Guaranteeing that there is no internal interference (inside Brazil)
+Praticidade/simplicidade para votar,Convenience/ease of voting
+Confianca no sistema operacional de eleicao (urna ou papel),Trust in the voting system (electronic ballot or paper ballot)
+Certificacao de que meu voto foi computado,Guaranteeing my vote was counted
+4a Serie Fundamental,Elementary School
+Medio completo,High School
+Superior completo,Higher Education
+Analfabeto/ ate 3a Serie Fundamental,No education
+Fundamental completo,Middle School
+Parda,Pardo (brown)
+Preta,Black
+Branca,White
+Outra,Other
+Indigena,Indigenous
+Amarela,Yellow
+Protestante/Evangelica,Protestant / Evangelical
+Ateu,Atheist
+Sem religiao definida/Tenho minha espiritualidade,No defined religion / I have my own spirituality
+Catolica,Catholic
+Umbanda/Candomble/Cultos africanos,Umbanda / Candomblé / African Cults
+Budista/Kardecista,Buddhist / Shinto
+Outras,Other
+Espirita/Kardecista,Spiritist / Kardecist
+"Ate R$ 600,00 - Ate  e meio SM",Up to R$ 600
+"Entre de R$ 600,01 ate R$ 1.200,00 - De  e meio ate 1 SM","Between R$ 600,01 and R$ 1.200,00"
+"Entre de R$ 1.200,01 ate R$ 1.800,00 - De 1 ate 1 e meio  SMs","Between R$ 1.200,01 and R$1.800,00"
+"Entre de R$ 1.800,01 ate R$ 3.600,00 - De 1 e meio ate 3 SMs","Between R$ 1.800,01 and R$ 3.600,00"
+"Entre de R$ 3.600,01 ate R$ 7.200,00 - De 3 ate 6 SMs","Between R$ 3.600,01 and R$ 7.200,00"
+"Entre de R$ 7.200,01 ate R$ 12.000,00 - De 6 ate 10 SMs","Between R$ 7.200,01 and R$ 12.000,00"
+"Acima de R$ 12.000,00 - Mais de 10 SMs","More than R$ 12.000,00"
+Recusa,Unsure
+Não tem renda,No income
+E,E
+D,D
+C2,C2
+C1,C1
+B2,B2
+B1,B1
+A,A
+NS/NR,DN/DA
+16 a 29 anos,16-29 age
+30 a 39 anos,30-39 age
+40 a 49 anos,40-49 age
+50 ou mais,50 or more
+Fundamental,Elementary School
+Medio,High School
+Superior,Higher Education
+Sem instrucao,No education
+Ate 1 SM,Up to 1 MW
+De 1 a 3 SMs,1 to 3 MWs
+De 3  a 6 SMs,3 to 6 MWs
+Mais de 6 SMs,More than 6 MWs
+Nao informou,Did not answer
+D/E,D/E
+C,C
+A/B,A/B
+Evangelicos,Evangelicals
+Sem religiao,No religion
+Catolicos,Catholic
+Outras religiões,Other religion
