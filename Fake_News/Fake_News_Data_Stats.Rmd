@@ -1,0 +1,600 @@
+---
+title: "Fake News Data - Stats and Correlations"
+author: "Natália Tosi"
+date: "8/5/2021"
+output: pdf_document
+---
+
+```{r message = FALSE, warning = FALSE, include = FALSE}
+
+knitr::opts_chunk$set(
+  echo = TRUE,
+  message = FALSE,
+  warning = FALSE,
+  fig.align = "center",
+  fig.width = 8, 
+  fig.height = 4
+  )
+
+options(scipen = 999)
+
+library(tidyverse)
+library(fastDummies)
+library(broom) 
+library(stargazer)
+library(knitr)
+library(janitor)
+
+```
+
+\bigskip
+
+# Importing Data and Labels
+
+\bigskip
+
+```{r}
+
+data_raw_port <- read_csv(
+  "BANCO_NACIONAL_FAKENEWS_2021-08-03_CLEAN - label.csv")
+
+variable_names <- read_csv(
+  "BANCO_NACIONAL_FAKENEWS_2021-08-03_CLEAN - variable_names.csv")
+
+answers_labels <- read_csv(
+  "BANCO_NACIONAL_FAKENEWS_2021-08-03_CLEAN - answers_translated.csv")
+
+```
+
+\bigskip
+
+# Translating Document
+
+\bigskip
+
+```{r}
+
+data_clean <- as_tibble(data_raw_port)
+colnames(data_clean) <- as_vector(variable_names[,2])
+
+data_eng <- data_clean
+data_eng[-c(1,2,3,7)] <- lapply(data_clean[-c(1,2,3,7)], 
+      function(x) answers_labels$answers_eng[match(x, 
+                                        answers_labels$answers_port)])
+
+```
+
+\bigskip
+
+Save as new CSV file
+
+\bigskip
+
+```{r}
+
+write.csv(data_eng,'fake_news_db_english.csv')
+
+```
+
+\newpage
+
+# Summary Statistics
+
+\bigskip
+
+```{r}
+
+data_eng <- data_eng %>%
+  mutate(
+    evaluation = case_when(
+    P1 %in% c("Excellent", "Good") ~ "Excellent/Good",
+    P1 %in% c("Bad", "Terrible") ~ "Bad/Terrible",
+    TRUE ~ P1),
+    approval = case_when(
+      P2 %in% c("Strongly approves", "Approves") ~ "Approves",
+      P2 %in% c("Strongly disapproves", "Disapproves") ~ "Disapproves",
+      TRUE ~ P2))
+
+
+data_fake_news_dem <- data_eng %>%
+  select(idInterview, P19, age_full, state, sex, age_60, race, education, class, income, 
+         religion, region, type, evaluation, approval, P4, P20, P21, P22, 
+         P23_1, P23_2, P23_3, P23_4, P23_5) %>%
+  filter(P19 != "Unsure") %>%
+  mutate(shared_fake_news_19 = if_else(P19 == "Yes", 1, 0),
+         unnoticed_fake_news = if_else(P21 == "Yes", 1, 0),
+         race = if_else(race %in% c("Black", "Pardo (brown)"), "Black/Pardo", 
+                        race)) %>%
+  rename(c(pol_orientation = P4, 
+           frequency_fake_news = P20,
+           reaction_fake_news = P22,
+           resp_population = P23_1,
+           resp_gov = P23_2,
+           resp_politicians = P23_3,
+           resp_press = P23_4,
+           resp_social_media = P23_5))
+
+
+data_fake_news_dem <- data_fake_news_dem %>%
+  mutate(sex = factor(sex, levels = c("Men", "Women")),
+         region = factor(region, levels = c("North", "Northeast", "Center-West", 
+                                   "Southeast", "South")),
+         type = factor(type, levels = c("Capital", "Metropolitan region", 
+                                        "Countryside")),
+         evaluation = factor(evaluation, levels = c("Excellent/Good", "Regular", 
+                                        "Bad/Terrible", "Unsure")),
+         approval = factor(approval, levels = c("Approves", 
+                                     "Neither approves nor disapproves",
+                                      "Disapproves", "Unsure")),
+         pol_orientation = factor(pol_orientation, levels = c("Right/Center-Right", 
+                                      "Center", "Left/Center-Left", 
+                            "I no longer have a defined political orientation",
+                            "I never had a political orientation", "Unsure")),
+         race = factor(race, levels = c("White", "Black/Pardo","Indigenous", 
+                                        "Yellow", "Other")),
+         education = factor(education, levels = c("No education", "Elementary School", 
+                                       "High School", "Higher Education")),
+         income = factor(income, levels = c("Up to 1 MW", "1 to 3 MWs", "3 to 6 MWs", 
+                                    "More than 6 MWs", "Did not answer")),
+         class = factor(class, levels = c("A/B", "C", "D/E", "DN/DA")),
+         religion = factor(religion, levels = c("Catholic", "Evangelicals", 
+                                      "Other religion", "No religion")),
+         frequency_fake_news = factor(frequency_fake_news, levels = c("Often",
+                                "Sometimes", "Hardly ever", "Never", "Unsure")))
+
+data_fake_news_dem <- data_fake_news_dem %>%
+  mutate(race_adj = fct_collapse(race,
+                                 White = c("White"),
+                                 Black = c("Black/Pardo"),
+                                 Other = c("Indigenous", "Yellow", "Other")))
+
+
+```
+
+\bigskip
+
+#DEMOGRAPHICS
+
+\bigskip
+
+Sex
+
+\bigskip
+
+```{r}
+
+data_fake_news_dem %>%
+  count(sex) %>%
+  mutate(share = (n/sum(n))*100) %>%
+  kable()
+
+```
+\bigskip
+
+Age
+
+\bigskip
+
+```{r}
+
+data_fake_news_dem %>%
+   summarise(mean = mean(age_full),
+             median = median(age_full),
+             sd = sd(age_full)) %>%
+  kable()
+
+```
+
+\bigskip
+
+```{r}
+
+data_fake_news_dem %>%
+  count(age_60) %>%
+  mutate(share = (n/sum(n))*100) %>%
+  kable()
+
+```
+
+\bigskip
+
+Race
+
+\bigskip
+
+```{r}
+
+data_fake_news_dem %>%
+  count(race_adj) %>%
+  mutate(share = (n/sum(n))*100) %>%
+  kable()
+
+```
+
+\bigskip
+
+Education
+
+\bigskip
+
+```{r}
+
+data_fake_news_dem %>%
+  count(education) %>%
+  mutate(share = (n/sum(n))*100) %>%
+  kable()
+
+```
+\bigskip
+
+Class
+
+\bigskip
+
+```{r}
+
+data_fake_news_dem %>%
+  count(class) %>%
+  mutate(share = (n/sum(n))*100) %>%
+  kable()
+
+```
+\bigskip
+
+Religion
+
+\bigskip
+
+```{r}
+
+data_fake_news_dem %>%
+  count(religion) %>%
+  mutate(share = (n/sum(n))*100) %>%
+  kable()
+
+```
+
+\bigskip
+
+
+Region
+
+\bigskip
+
+```{r}
+
+data_fake_news_dem %>%
+  count(region) %>%
+  mutate(share = (n/sum(n))*100) %>%
+  kable()
+
+```
+\bigskip
+
+City type
+
+\bigskip
+
+```{r}
+
+data_fake_news_dem %>%
+  count(type) %>%
+  mutate(share = (n/sum(n))*100) %>%
+  kable()
+
+```
+
+\bigskip
+
+
+Political Orientation
+
+\bigskip
+
+```{r}
+
+data_fake_news_dem %>%
+  count(pol_orientation) %>%
+  mutate(share = (n/sum(n))*100) %>%
+  kable()
+
+```
+
+\bigskip
+
+Government Approval Rating
+
+\bigskip
+
+```{r}
+
+data_fake_news_dem %>%
+  count(approval) %>%
+  mutate(share = (n/sum(n))*100) %>%
+  kable()
+
+```
+
+\bigskip
+
+
+# DUMMIES
+
+\bigskip
+
+
+```{r}
+
+data_fake_news_dem <- data_fake_news_dem %>%
+  dummy_cols(select_columns = c("sex","age_60","race","education","class",
+                                "income","religion","region","type", 
+                                "evaluation","approval","pol_orientation",
+                                "frequency_fake_news","P21","reaction_fake_news",
+                                "resp_population","resp_gov","resp_politicians",
+                                "resp_press","resp_social_media"))
+  
+```
+
+\bigskip
+
+# RESULTS
+
+
+\bigskip
+
+P19 - Have you ever shared a political news story online that you thought at the time was made up? (Single Answer)
+
+--> excluded "Unsure"
+
+\bigskip
+
+```{r}
+
+data_fake_news_dem %>%
+  count(P19) %>%
+  mutate(share = (n/sum(n))*100) %>%
+  arrange(desc(P19)) %>%
+  kable()
+
+```
+
+\bigskip
+
+Which groups are statistically significantly different than others in terms of sharing fake news?
+
+\bigskip
+
+```{r}
+
+fake_news_19 <- data_fake_news_dem %>%
+  select(28:78) %>%
+  lapply(., function(i) tidy(t.test(data_fake_news_dem$shared_fake_news_19 ~ i))) %>%
+  do.call(rbind, .) %>%
+  rownames_to_column("variable") %>%
+  rename(Yes = estimate2) %>%
+  mutate(No = 1 - Yes,
+         stat_05_other_groups = if_else(p.value < 0.05, "Yes", "No")) %>%
+  select(variable, Yes, No, p.value, stat_05_other_groups) %>%
+  arrange(desc(stat_05_other_groups))
+
+kable(fake_news_19)
+
+```
+
+
+\bigskip
+
+P20 - How often do you come across news stories online that you think are almost
+completely made up? (Single Answer) 
+
+\bigskip
+
+```{r}
+
+data_fake_news_dem %>%
+  count(frequency_fake_news) %>%
+  mutate(share = (n/sum(n))*100) %>%
+  kable()
+
+```
+
+
+```{r}
+
+
+Often	1003	51.861427
+Sometimes	435	22.492244
+Hardly ever	309	15.977249
+Never	111	5.739400
+Unsure
+
+frequency_often <- data_fake_news_dem %>%
+  select(28:78) %>%
+  lapply(., function(i) tidy(sum(i[data_fake_news_dem$frequency_fake_news == "Often"]))) %>%
+  do.call(rbind, .) %>%
+  rownames_to_column("variable") %>%
+  rename("count_Often" = x)
+  
+frequency_sometimes <- data_fake_news_dem %>%
+  select(28:78) %>%
+  lapply(., function(i) tidy(sum(i[data_fake_news_dem$frequency_fake_news == "Sometimes"]))) %>%
+  do.call(rbind, .) %>%
+  rownames_to_column("variable") %>%
+  rename("count_Sometimes" = x)
+
+frequency_hardlyever <- data_fake_news_dem %>%
+  select(28:78) %>%
+  lapply(., function(i) tidy(sum(i[data_fake_news_dem$frequency_fake_news == "Hardly ever"]))) %>%
+  do.call(rbind, .) %>%
+  rownames_to_column("variable") %>%
+  rename("count_Hardly_ever" = x)
+
+frequency_never <- data_fake_news_dem %>%
+  select(28:78) %>%
+  lapply(., function(i) tidy(sum(i[data_fake_news_dem$frequency_fake_news == "Never"]))) %>%
+  do.call(rbind, .) %>%
+  rownames_to_column("variable") %>%
+  rename("count_Never" = x)
+
+frequency_unsure <- data_fake_news_dem %>%
+  select(28:78) %>%
+  lapply(., function(i) tidy(sum(i[data_fake_news_dem$frequency_fake_news == "Unsure"]))) %>%
+  do.call(rbind, .) %>%
+  rownames_to_column("variable") %>%
+  rename("count_Unsure" = x)
+
+frequency_fake_news <- frequency_often %>%
+  left_join(fake_news_19_no, by = c("variable")) %>%
+  mutate(yes = (count_yes / (count_yes + count_no)),
+         no = (count_no / (count_yes + count_no))) %>%
+  select(-count_yes, -count_no)
+
+fake_news_19 <- data_fake_news_dem %>%
+  select(28:78) %>%
+  lapply(., function(i) tidy(t.test(data_fake_news_dem$shared_fake_news_19 ~ i))) %>%
+  do.call(rbind, .) %>%
+  rownames_to_column("variable") %>%
+  rename(Yes = estimate2) %>%
+  mutate(No = 1 - Yes,
+         stat_05_other_groups = if_else(p.value < 0.05, "Yes", "No")) %>%
+  select(variable, Yes, No, p.value, stat_05_other_groups) %>%
+  arrange(desc(stat_05_other_groups))
+
+kable(fake_news_19)
+
+```
+
+
+\bigskip
+
+P21 - Have you ever shared a political news story online that you later found out was made up? (Single Answer) 
+
+\bigskip
+
+```{r}
+
+data_fake_news_dem %>%
+  count(P21) %>%
+  mutate(share = (n/sum(n))*100) %>%
+  mutate(P21 = factor(P21, levels = c("Yes", "No", "Unsure"))) %>%
+  arrange(P21) %>%
+  kable()
+
+```
+
+
+\bigskip
+
+P22 - [IS ANSWERED YES] What was your reaction when you found out that the information shared was not true? If it happened more than once, select the option that was most frequent (Single Answer)
+
+\bigskip
+
+```{r}
+
+data_fake_news_dem %>%
+  count(reaction_fake_news) %>%
+  filter(!is.na(reaction_fake_news)) %>%
+  mutate(share = (n/sum(n))*100) %>%
+  arrange(desc(share)) %>%
+  kable()
+
+```
+
+
+\bigskip
+
+P23 - How much responsibility does each of the following have in trying to prevent made up (fake news) stories from gaining attention”. (Single Answer per category)
+
+\bigskip
+
+```{r}
+
+resp_population <- data_fake_news_dem %>%
+  count(resp_population) %>%
+  mutate(population = (n/sum(n))*100) %>%
+  select(-n)
+
+resp_gov <- data_fake_news_dem %>%
+  count(resp_gov) %>%
+  mutate(governments = (n/sum(n))*100) %>%
+  select(-n)
+
+resp_politicians <- data_fake_news_dem %>%
+  count(resp_politicians) %>%
+  mutate(politicians = (n/sum(n))*100) %>%
+  select(-n)
+
+resp_press <- data_fake_news_dem %>%
+  count(resp_press) %>%
+  mutate(press = (n/sum(n))*100) %>%
+  select(-n)
+
+resp_social_media <- data_fake_news_dem %>%
+  count(resp_social_media) %>%
+  mutate(social_media = (n/sum(n))*100) %>%
+  select(-n)
+
+responsibility <- resp_population %>%
+  left_join(resp_gov, by = c("resp_population" = "resp_gov")) %>%
+  left_join(resp_politicians, by = c("resp_population" = "resp_politicians")) %>%
+  left_join(resp_press, by = c("resp_population" = "resp_press")) %>%
+  left_join(resp_social_media, by = c("resp_population" = "resp_social_media")) %>%
+  mutate(resp_population = factor(resp_population, 
+  levels = c("A great deal of responsibility", "A fair amount of responsibility",
+            "Not much responsibility", "No responsibility at all", "Unsure"))) %>%
+  arrange(resp_population) %>%
+  rename(c(answer = resp_population))
+  
+kable(responsibility)  
+
+```
+
+
+
+
+#CORRELATIONS
+
+\bigskip
+
+*Dependent Variable = `Shared Fake News (`shared_fake_news_19`)* 
+
+\bigskip
+
+P19 - Have you ever shared a political news story online that you thought at the time was made up? (Single Answer) 
+
+\bigskip
+
+1 = Yes; 0 = No
+
+```{r}
+
+table_correlations <- data_fake_news_dem %>%
+  select(28:117) %>%
+  lapply(., function(i) tidy(cor(i,data_fake_news_dem$shared_fake_news_19))) %>%
+  do.call(rbind, .) %>%
+  rownames_to_column("variable") %>%
+  rename("Correlation" = x)
+
+table_balance <- data_fake_news_dem %>%
+  select(28:117) %>%
+  lapply(., function(i) tidy(t.test(i ~ data_fake_news_dem$shared_fake_news_19))) %>%
+  do.call(rbind, .) %>%
+  rownames_to_column("variable") %>%
+  rename(mean_diff = estimate, mean_control = estimate1, 
+         mean_treatment = estimate2) %>%
+  select(variable, mean_diff, mean_control, mean_treatment, statistic, p.value) %>%
+  mutate(stat_05 = if_else(p.value < 0.05, "Yes", "No"))
+
+table_correlations <- table_correlations %>%
+  left_join(table_balance, by = c("variable" = "variable"))
+
+kable(table_correlations, 
+      caption = "Balance Table - Observable Characteristics with Dependent Variable",
+      digits = 3,
+      align = "c")
+
+```
+
+
+
+
