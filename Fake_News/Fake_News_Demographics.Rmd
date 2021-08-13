@@ -1,0 +1,324 @@
+---
+title: "Fake News Data - Demographics"
+author: "Natália Tosi"
+date: "08/10/2021"
+output: pdf_document
+---
+
+```{r message = FALSE, warning = FALSE, include = FALSE}
+
+knitr::opts_chunk$set(
+  echo = TRUE,
+  message = FALSE,
+  warning = FALSE,
+  fig.align = "center",
+  fig.width = 8, 
+  fig.height = 4
+  )
+
+options(scipen = 999)
+
+library(tidyverse)
+library(broom) 
+library(stargazer)
+library(knitr)
+
+```
+
+\bigskip
+
+```{r}
+
+data_code <- read_csv("fake_news_data_code.csv") %>%
+  select(-1)
+
+```
+
+
+# Demographics
+
+\bigskip
+
+**Sex**
+
+\bigskip
+
+```{r, echo = FALSE}
+
+data_code %>%
+  count(sex) %>%
+  mutate(share = (n/sum(n))*100) %>%
+  kable(digits = 3)
+
+```
+\bigskip
+
+**Age**
+
+\bigskip
+
+```{r, echo = FALSE}
+
+data_code %>%
+   summarise(mean = mean(age_full),
+             median = median(age_full),
+             sd = sd(age_full)) %>%
+  kable(digits = 3)
+
+```
+
+\bigskip
+
+```{r, echo = FALSE}
+
+data_code %>%
+  count(age_60) %>%
+  mutate(share = (n/sum(n))*100) %>%
+  kable(digits = 3)
+
+```
+
+\bigskip
+
+**Race**
+
+\bigskip
+
+```{r, echo = FALSE}
+
+data_code %>%
+  count(race) %>%
+  mutate(share = (n/sum(n))*100) %>%
+  kable(digits = 3)
+
+```
+
+\bigskip
+
+**Education**
+
+\bigskip
+
+```{r, echo = FALSE}
+
+data_code %>%
+  count(education) %>%
+  mutate(share = (n/sum(n))*100) %>%
+  kable(digits = 3)
+
+```
+\bigskip
+
+**Class**
+
+\bigskip
+
+```{r, echo = FALSE}
+
+data_code %>%
+  count(class) %>%
+  mutate(share = (n/sum(n))*100) %>%
+  kable(digits = 3)
+
+```
+\bigskip
+
+**Religion**
+
+\bigskip
+
+```{r, echo = FALSE}
+
+data_code %>%
+  count(religion) %>%
+  mutate(share = (n/sum(n))*100) %>%
+  kable(digits = 3)
+
+```
+
+\bigskip
+
+
+**Region**
+
+\bigskip
+
+```{r, echo = FALSE}
+
+data_code %>%
+  count(region) %>%
+  mutate(share = (n/sum(n))*100) %>%
+  kable(digits = 3)
+
+```
+\bigskip
+
+**City type**
+
+\bigskip
+
+```{r, echo = FALSE}
+
+data_code %>%
+  count(type) %>%
+  mutate(share = (n/sum(n))*100) %>%
+  kable(digits = 3)
+
+```
+
+\bigskip
+
+
+**Political Orientation**
+
+\bigskip
+
+```{r, echo = FALSE}
+
+data_code %>%
+  count(pol_orientation) %>%
+  mutate(share = (n/sum(n))*100) %>%
+  kable(digits = 3)
+
+```
+
+\bigskip
+
+**Government Approval Rating**
+
+\bigskip
+
+```{r, echo = FALSE}
+
+data_code %>%
+  count(approval) %>%
+  mutate(share = (n/sum(n))*100) %>%
+  kable(digits = 3)
+
+```
+
+\bigskip
+
+
+# Answers Paper Demographics
+
+**P19 - Have you ever shared a political news story online that you thought at the time was made up? (Single Answer)**
+
+--> excluded "Unsure"
+
+\bigskip
+
+```{r, echo = FALSE}
+
+data_code %>%
+  count(P19) %>%
+  mutate(share = (n/sum(n))*100) %>%
+  arrange(desc(P19)) %>%
+  kable(digits = 3)
+
+```
+
+
+\bigskip
+
+**P20 - How often do you come across news stories online that you think are almost completely made up? (Single Answer)**
+
+\bigskip
+
+```{r, echo = FALSE}
+
+data_code %>%
+  count(frequency_fake_news) %>%
+  mutate(share = (n/sum(n))*100) %>%
+  kable(digits = 3)
+
+```
+
+
+\bigskip
+
+**P21 - Have you ever shared a political news story online that you later found out was made up? (Single Answer)**
+
+\bigskip
+
+```{r, echo = FALSE}
+
+data_code %>%
+  count(P21) %>%
+  mutate(share = (n/sum(n))*100) %>%
+  mutate(P21 = factor(P21, levels = c("Yes", "No", "Unsure"))) %>%
+  arrange(P21) %>%
+  kable(digits = 3)
+
+```
+
+
+\bigskip
+
+**P22 - [IS ANSWERED YES] What was your reaction when you found out that the information shared was not true? If it happened more than once, select the option that was most frequent (Single Answer)**
+
+\bigskip
+
+```{r, echo = FALSE}
+
+data_code %>%
+  count(reaction_fake_news) %>%
+  filter(!is.na(reaction_fake_news)) %>%
+  mutate(share = (n/sum(n))*100) %>%
+  arrange(desc(share)) %>%
+  kable(digits = 3)
+
+```
+
+
+\bigskip
+
+**P23 - How much responsibility does each of the following have in trying to prevent made up (fake news) stories from gaining attention”. (Single Answer per category)**
+
+\bigskip
+
+1 = "A great deal of responsibility" and "A fair amount of responsibility"
+
+\bigskip
+
+```{r}
+
+resp_population <- data_code %>%
+  count(resp_population) %>%
+  mutate(population = (n/sum(n))*100) %>%
+  select(-n)
+
+resp_gov <- data_code %>%
+  count(resp_gov) %>%
+  mutate(governments = (n/sum(n))*100) %>%
+  select(-n)
+
+resp_politicians <- data_code %>%
+  count(resp_politicians) %>%
+  mutate(politicians = (n/sum(n))*100) %>%
+  select(-n)
+
+resp_press <- data_code %>%
+  count(resp_press) %>%
+  mutate(press = (n/sum(n))*100) %>%
+  select(-n)
+
+resp_social_media <- data_code %>%
+  count(resp_social_media) %>%
+  mutate(social_media = (n/sum(n))*100) %>%
+  select(-n)
+
+responsibility <- resp_population %>%
+  left_join(resp_gov, by = c("resp_population" = "resp_gov")) %>%
+  left_join(resp_politicians, by = c("resp_population" = "resp_politicians")) %>%
+  left_join(resp_press, by = c("resp_population" = "resp_press")) %>%
+  left_join(resp_social_media, by = c("resp_population" = "resp_social_media")) %>%
+  mutate(resp_population = factor(resp_population, levels = c(1, 0))) %>%
+  arrange(resp_population) %>%
+  rename(c(answer = resp_population))
+  
+kable(responsibility,
+      digits = 3) 
+
+```
+

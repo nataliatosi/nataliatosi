@@ -1,7 +1,7 @@
 ---
 title: "Fake News Data - Stats and Correlations"
 author: "Natália Tosi"
-date: "8/5/2021"
+date: "08/13/2021"
 output: pdf_document
 ---
 
@@ -19,169 +19,13 @@ knitr::opts_chunk$set(
 options(scipen = 999)
 
 library(tidyverse)
-library(fastDummies)
 library(broom) 
 library(stargazer)
 library(knitr)
 library(janitor)
-
-```
-
-\bigskip
-
-# Importing Data and Labels
-
-\bigskip
-
-```{r}
-
-data_raw_port <- read_csv(
-  "BANCO_NACIONAL_FAKENEWS_2021-08-03_CLEAN - label.csv")
-
-variable_names <- read_csv(
-  "BANCO_NACIONAL_FAKENEWS_2021-08-03_CLEAN - variable_names.csv")
-
-answers_labels <- read_csv(
-  "BANCO_NACIONAL_FAKENEWS_2021-08-03_CLEAN - answers_translated.csv")
-
-```
-
-\bigskip
-
-# Translating Document
-
-\bigskip
-
-```{r}
-
-data_clean <- as_tibble(data_raw_port)
-colnames(data_clean) <- as_vector(variable_names[,2])
-
-data_eng <- data_clean
-data_eng[-c(1,2,3,7)] <- lapply(data_clean[-c(1,2,3,7)], 
-      function(x) answers_labels$answers_eng[match(x, 
-                                        answers_labels$answers_port)])
-
-```
-
-\bigskip
-
-Save as new CSV file
-
-\bigskip
-
-```{r}
-
-write.csv(data_eng,'fake_news_db_english.csv')
-
-```
-
-\newpage
-
-# Summary Statistics
-
-\bigskip
-
-```{r}
-
-data_eng <- data_eng %>%
-  mutate(
-    evaluation = case_when(
-    P1 %in% c("Excellent", "Good") ~ "Excellent/Good",
-    P1 %in% c("Bad", "Terrible") ~ "Bad/Terrible",
-    TRUE ~ P1),
-    approval = case_when(
-      P2 %in% c("Strongly approves", "Approves") ~ "Approves",
-      P2 %in% c("Strongly disapproves", "Disapproves") ~ "Disapproves",
-      TRUE ~ P2))
-
-
-data_fake_news_dem <- data_eng %>%
-  select(idInterview, P19, age_full, state, sex, age_60, race, education, class, income, 
-         religion, region, type, evaluation, approval, P4, P20, P21, P22, 
-         P23_1, P23_2, P23_3, P23_4, P23_5) %>%
-  filter(P19 != "Unsure") %>%
-  mutate(shared_fake_news_19 = if_else(P19 == "Yes", 1, 0),
-         unnoticed_fake_news = if_else(P21 == "Yes", 1, 0),
-         race = if_else(race %in% c("Black", "Pardo (brown)"), "Black/Pardo", 
-                        race)) %>%
-  rename(c(pol_orientation = P4, 
-           frequency_fake_news = P20,
-           reaction_fake_news = P22,
-           resp_population = P23_1,
-           resp_gov = P23_2,
-           resp_politicians = P23_3,
-           resp_press = P23_4,
-           resp_social_media = P23_5))
-
-
-data_fake_news_dem <- data_fake_news_dem %>%
-  mutate(sex = factor(sex, levels = c("Men", "Women")),
-         region = factor(region, levels = c("North", "Northeast", "Center-West", 
-                                   "Southeast", "South")),
-         type = factor(type, levels = c("Capital", "Metropolitan region", 
-                                        "Countryside")),
-         evaluation = factor(evaluation, levels = c("Excellent/Good", "Regular", 
-                                        "Bad/Terrible", "Unsure")),
-         approval = factor(approval, levels = c("Approves", 
-                                     "Neither approves nor disapproves",
-                                      "Disapproves", "Unsure")),
-         pol_orientation = factor(pol_orientation, levels = c("Right/Center-Right", 
-                                      "Center", "Left/Center-Left", 
-                            "I no longer have a defined political orientation",
-                            "I never had a political orientation", "Unsure")),
-         race = factor(race, levels = c("White", "Black/Pardo","Indigenous", 
-                                        "Yellow", "Other")),
-         education = factor(education, levels = c("No education", "Elementary School", 
-                                       "High School", "Higher Education")),
-         income = factor(income, levels = c("Up to 1 MW", "1 to 3 MWs", "3 to 6 MWs", 
-                                    "More than 6 MWs", "Did not answer")),
-         class = factor(class, levels = c("A/B", "C", "D/E", "DN/DA")),
-         religion = factor(religion, levels = c("Catholic", "Evangelicals", 
-                                      "Other religion", "No religion")),
-         frequency_fake_news = factor(frequency_fake_news, levels = c("Often",
-                                "Sometimes", "Hardly ever", "Never", "Unsure")))
-
-data_fake_news_dem <- data_fake_news_dem %>%
-  mutate(race_adj = fct_collapse(race,
-                                 White = c("White"),
-                                 Black = c("Black/Pardo"),
-                                 Other = c("Indigenous", "Yellow", "Other")))
-
-
-```
-
-\bigskip
-
-#DEMOGRAPHICS
-
-\bigskip
-
-Sex
-
-\bigskip
-
-```{r}
-
-data_fake_news_dem %>%
-  count(sex) %>%
-  mutate(share = (n/sum(n))*100) %>%
-  kable()
-
-```
-\bigskip
-
-Age
-
-\bigskip
-
-```{r}
-
-data_fake_news_dem %>%
-   summarise(mean = mean(age_full),
-             median = median(age_full),
-             sd = sd(age_full)) %>%
-  kable()
+library(corrplot)
+library(stringr)
+library(car)
 
 ```
 
@@ -189,412 +33,438 @@ data_fake_news_dem %>%
 
 ```{r}
 
-data_fake_news_dem %>%
-  count(age_60) %>%
-  mutate(share = (n/sum(n))*100) %>%
-  kable()
+data_code <- read_csv("fake_news_data_code.csv") %>%
+  select(-1)
 
 ```
 
-\bigskip
 
-Race
-
-\bigskip
-
-```{r}
-
-data_fake_news_dem %>%
-  count(race_adj) %>%
-  mutate(share = (n/sum(n))*100) %>%
-  kable()
-
-```
+# Correlation with Dependent Variable
 
 \bigskip
 
-Education
-
-\bigskip
-
-```{r}
-
-data_fake_news_dem %>%
-  count(education) %>%
-  mutate(share = (n/sum(n))*100) %>%
-  kable()
-
-```
-\bigskip
-
-Class
-
-\bigskip
-
-```{r}
-
-data_fake_news_dem %>%
-  count(class) %>%
-  mutate(share = (n/sum(n))*100) %>%
-  kable()
-
-```
-\bigskip
-
-Religion
-
-\bigskip
-
-```{r}
-
-data_fake_news_dem %>%
-  count(religion) %>%
-  mutate(share = (n/sum(n))*100) %>%
-  kable()
-
-```
-
-\bigskip
-
-
-Region
-
-\bigskip
-
-```{r}
-
-data_fake_news_dem %>%
-  count(region) %>%
-  mutate(share = (n/sum(n))*100) %>%
-  kable()
-
-```
-\bigskip
-
-City type
-
-\bigskip
-
-```{r}
-
-data_fake_news_dem %>%
-  count(type) %>%
-  mutate(share = (n/sum(n))*100) %>%
-  kable()
-
-```
-
-\bigskip
-
-
-Political Orientation
-
-\bigskip
-
-```{r}
-
-data_fake_news_dem %>%
-  count(pol_orientation) %>%
-  mutate(share = (n/sum(n))*100) %>%
-  kable()
-
-```
-
-\bigskip
-
-Government Approval Rating
-
-\bigskip
-
-```{r}
-
-data_fake_news_dem %>%
-  count(approval) %>%
-  mutate(share = (n/sum(n))*100) %>%
-  kable()
-
-```
-
-\bigskip
-
-
-# DUMMIES
-
-\bigskip
-
-
-```{r}
-
-data_fake_news_dem <- data_fake_news_dem %>%
-  dummy_cols(select_columns = c("sex","age_60","race","education","class",
-                                "income","religion","region","type", 
-                                "evaluation","approval","pol_orientation",
-                                "frequency_fake_news","P21","reaction_fake_news",
-                                "resp_population","resp_gov","resp_politicians",
-                                "resp_press","resp_social_media"))
-  
-```
-
-\bigskip
-
-# RESULTS
-
+**Dependent Variable = Shared Fake News (`shared_fake_news_19`)** 
 
 \bigskip
 
 P19 - Have you ever shared a political news story online that you thought at the time was made up? (Single Answer)
 
---> excluded "Unsure"
-
-\bigskip
-
-```{r}
-
-data_fake_news_dem %>%
-  count(P19) %>%
-  mutate(share = (n/sum(n))*100) %>%
-  arrange(desc(P19)) %>%
-  kable()
-
-```
-
-\bigskip
-
-Which groups are statistically significantly different than others in terms of sharing fake news?
-
-\bigskip
-
-```{r}
-
-fake_news_19 <- data_fake_news_dem %>%
-  select(28:78) %>%
-  lapply(., function(i) tidy(t.test(data_fake_news_dem$shared_fake_news_19 ~ i))) %>%
-  do.call(rbind, .) %>%
-  rownames_to_column("variable") %>%
-  rename(Yes = estimate2) %>%
-  mutate(No = 1 - Yes,
-         stat_05_other_groups = if_else(p.value < 0.05, "Yes", "No")) %>%
-  select(variable, Yes, No, p.value, stat_05_other_groups) %>%
-  arrange(desc(stat_05_other_groups))
-
-kable(fake_news_19)
-
-```
-
-
-\bigskip
-
-P20 - How often do you come across news stories online that you think are almost
-completely made up? (Single Answer) 
-
-\bigskip
-
-```{r}
-
-data_fake_news_dem %>%
-  count(frequency_fake_news) %>%
-  mutate(share = (n/sum(n))*100) %>%
-  kable()
-
-```
-
-
-```{r}
-
-
-Often	1003	51.861427
-Sometimes	435	22.492244
-Hardly ever	309	15.977249
-Never	111	5.739400
-Unsure
-
-frequency_often <- data_fake_news_dem %>%
-  select(28:78) %>%
-  lapply(., function(i) tidy(sum(i[data_fake_news_dem$frequency_fake_news == "Often"]))) %>%
-  do.call(rbind, .) %>%
-  rownames_to_column("variable") %>%
-  rename("count_Often" = x)
-  
-frequency_sometimes <- data_fake_news_dem %>%
-  select(28:78) %>%
-  lapply(., function(i) tidy(sum(i[data_fake_news_dem$frequency_fake_news == "Sometimes"]))) %>%
-  do.call(rbind, .) %>%
-  rownames_to_column("variable") %>%
-  rename("count_Sometimes" = x)
-
-frequency_hardlyever <- data_fake_news_dem %>%
-  select(28:78) %>%
-  lapply(., function(i) tidy(sum(i[data_fake_news_dem$frequency_fake_news == "Hardly ever"]))) %>%
-  do.call(rbind, .) %>%
-  rownames_to_column("variable") %>%
-  rename("count_Hardly_ever" = x)
-
-frequency_never <- data_fake_news_dem %>%
-  select(28:78) %>%
-  lapply(., function(i) tidy(sum(i[data_fake_news_dem$frequency_fake_news == "Never"]))) %>%
-  do.call(rbind, .) %>%
-  rownames_to_column("variable") %>%
-  rename("count_Never" = x)
-
-frequency_unsure <- data_fake_news_dem %>%
-  select(28:78) %>%
-  lapply(., function(i) tidy(sum(i[data_fake_news_dem$frequency_fake_news == "Unsure"]))) %>%
-  do.call(rbind, .) %>%
-  rownames_to_column("variable") %>%
-  rename("count_Unsure" = x)
-
-frequency_fake_news <- frequency_often %>%
-  left_join(fake_news_19_no, by = c("variable")) %>%
-  mutate(yes = (count_yes / (count_yes + count_no)),
-         no = (count_no / (count_yes + count_no))) %>%
-  select(-count_yes, -count_no)
-
-fake_news_19 <- data_fake_news_dem %>%
-  select(28:78) %>%
-  lapply(., function(i) tidy(t.test(data_fake_news_dem$shared_fake_news_19 ~ i))) %>%
-  do.call(rbind, .) %>%
-  rownames_to_column("variable") %>%
-  rename(Yes = estimate2) %>%
-  mutate(No = 1 - Yes,
-         stat_05_other_groups = if_else(p.value < 0.05, "Yes", "No")) %>%
-  select(variable, Yes, No, p.value, stat_05_other_groups) %>%
-  arrange(desc(stat_05_other_groups))
-
-kable(fake_news_19)
-
-```
-
-
-\bigskip
-
-P21 - Have you ever shared a political news story online that you later found out was made up? (Single Answer) 
-
-\bigskip
-
-```{r}
-
-data_fake_news_dem %>%
-  count(P21) %>%
-  mutate(share = (n/sum(n))*100) %>%
-  mutate(P21 = factor(P21, levels = c("Yes", "No", "Unsure"))) %>%
-  arrange(P21) %>%
-  kable()
-
-```
-
-
-\bigskip
-
-P22 - [IS ANSWERED YES] What was your reaction when you found out that the information shared was not true? If it happened more than once, select the option that was most frequent (Single Answer)
-
-\bigskip
-
-```{r}
-
-data_fake_news_dem %>%
-  count(reaction_fake_news) %>%
-  filter(!is.na(reaction_fake_news)) %>%
-  mutate(share = (n/sum(n))*100) %>%
-  arrange(desc(share)) %>%
-  kable()
-
-```
-
-
-\bigskip
-
-P23 - How much responsibility does each of the following have in trying to prevent made up (fake news) stories from gaining attention”. (Single Answer per category)
-
-\bigskip
-
-```{r}
-
-resp_population <- data_fake_news_dem %>%
-  count(resp_population) %>%
-  mutate(population = (n/sum(n))*100) %>%
-  select(-n)
-
-resp_gov <- data_fake_news_dem %>%
-  count(resp_gov) %>%
-  mutate(governments = (n/sum(n))*100) %>%
-  select(-n)
-
-resp_politicians <- data_fake_news_dem %>%
-  count(resp_politicians) %>%
-  mutate(politicians = (n/sum(n))*100) %>%
-  select(-n)
-
-resp_press <- data_fake_news_dem %>%
-  count(resp_press) %>%
-  mutate(press = (n/sum(n))*100) %>%
-  select(-n)
-
-resp_social_media <- data_fake_news_dem %>%
-  count(resp_social_media) %>%
-  mutate(social_media = (n/sum(n))*100) %>%
-  select(-n)
-
-responsibility <- resp_population %>%
-  left_join(resp_gov, by = c("resp_population" = "resp_gov")) %>%
-  left_join(resp_politicians, by = c("resp_population" = "resp_politicians")) %>%
-  left_join(resp_press, by = c("resp_population" = "resp_press")) %>%
-  left_join(resp_social_media, by = c("resp_population" = "resp_social_media")) %>%
-  mutate(resp_population = factor(resp_population, 
-  levels = c("A great deal of responsibility", "A fair amount of responsibility",
-            "Not much responsibility", "No responsibility at all", "Unsure"))) %>%
-  arrange(resp_population) %>%
-  rename(c(answer = resp_population))
-  
-kable(responsibility)  
-
-```
-
-
-
-
-#CORRELATIONS
-
-\bigskip
-
-*Dependent Variable = `Shared Fake News (`shared_fake_news_19`)* 
-
-\bigskip
-
-P19 - Have you ever shared a political news story online that you thought at the time was made up? (Single Answer) 
-
 \bigskip
 
 1 = Yes; 0 = No
 
+\bigskip
+
+PS: Statistically significant regarding each category to check if there are differences in observable characteristics between those who shared fake news. For example, is there a statistically significant difference between men than shared fake news and non-men that shared fake news? Analysis together with the correlation between each dummy variable with the dependent variable.
+
 ```{r}
 
-table_correlations <- data_fake_news_dem %>%
-  select(28:117) %>%
-  lapply(., function(i) tidy(cor(i,data_fake_news_dem$shared_fake_news_19))) %>%
+table_correlations <- data_code %>%
+  select(-P19, -shared_fake_news_19) %>%
+  select_if(is.numeric) %>%
+  lapply(., function(i) tidy(cor(i, data_code$shared_fake_news_19))) %>%
   do.call(rbind, .) %>%
   rownames_to_column("variable") %>%
   rename("Correlation" = x)
 
-table_balance <- data_fake_news_dem %>%
-  select(28:117) %>%
-  lapply(., function(i) tidy(t.test(i ~ data_fake_news_dem$shared_fake_news_19))) %>%
+table_balance <- data_code %>%
+  select(-P19, -shared_fake_news_19) %>%
+  select(is.numeric) %>%
+  lapply(., function(i) tidy(t.test(i ~ data_code$shared_fake_news_19))) %>%
   do.call(rbind, .) %>%
   rownames_to_column("variable") %>%
   rename(mean_diff = estimate, mean_control = estimate1, 
          mean_treatment = estimate2) %>%
-  select(variable, mean_diff, mean_control, mean_treatment, statistic, p.value) %>%
-  mutate(stat_05 = if_else(p.value < 0.05, "Yes", "No"))
+  mutate(stat_05 = if_else(p.value < 0.05, "Yes", "No")) %>%
+  select(variable, mean_diff, stat_05)
 
 table_correlations <- table_correlations %>%
-  left_join(table_balance, by = c("variable" = "variable"))
+  left_join(table_balance, by = c("variable" = "variable")) %>%
+  arrange(desc(Correlation))
 
-kable(table_correlations, 
-      caption = "Balance Table - Observable Characteristics with Dependent Variable",
+table_correlations %>%
+  kable(caption = "Balance Table - Observable Characteristics with Dependent Variable",
       digits = 3,
       align = "c")
 
 ```
 
+\bigskip
+
+# Multicollinearity Between Variables
+
+\bigskip
+
+Correlation matrix to identify multicollinearity. Excluded correlations between same variables, or dummies for the same questions (perfect collinearity addressed by dropping a value in the regression).
+
+Highlighted variables with correlation higher than 0.3 in absolute value.
+
+\bigskip
+
+```{r}
+
+data_code_numeric <- data_code %>%
+  select_if(is.numeric) %>%
+  select(-idInterview, -reaction_fake_news_Unsure, -reaction_fake_news_NA)
+  
+matrix_correlations <- as.data.frame(round(cor(data_code_numeric), 2)) %>%
+  rownames_to_column("variable_1") %>%
+  pivot_longer(cols = is.numeric,
+               names_to = "variable_2", 
+               values_to = "Correlation") %>%
+  mutate(absolute_correlation = abs(Correlation)) %>%
+  arrange(desc(absolute_correlation)) %>%
+  mutate(question_1 = substr(variable_1, 1, 7),
+         question_2 = substr(variable_2, 1, 7)) %>%
+  separate(question_1, into = c("question_1", "left1"), sep = "_") %>%
+  separate(question_2, into = c("question_2", "left2"), sep = "_") %>%
+  mutate(same = if_else(((variable_1 == variable_2) | 
+                          (question_1 == question_2)), 1, 0)) %>%
+  filter(same == 0 & (absolute_correlation > 0.3)) %>%
+  select(-same, -left1, -left2, -question_1, -question_2)
+
+matrix_correlations %>%
+  kable(caption = "Correlation Between Variables (> 0.3 in absolute value)",
+      align = "c")
+
+```
+
+```{r}
+
+matrix_correlations %>%
+  ggplot(aes(x = fct_reorder(variable_1, absolute_correlation), 
+             y = variable_2, fill = absolute_correlation)) + 
+  geom_tile() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 1, hjust = 1, size = 6),
+        axis.text.y = element_text(vjust = 1, hjust = 1, size = 6),
+        plot.title = element_text(color = "grey13", size = 10, face = "bold")) +
+  labs(x = "Variable 1", y = "Variable 2", fill = "Absolute Correlation", 
+       title = "Correlation Between Variables (> 0.3 in absolute value)")
+
+```
 
 
+
+# Regressions - All categories
+
+
+\bigskip
+
+Dependent variable: `shared_fake_news_19`
+
+\bigskip
+
+Model 1 - Only demographics
+
+\bigskip
+
+```{r}
+
+model_19_1 <- glm(shared_fake_news_19 ~ sex_men + age_full + race_is_white +
+                    education_high + class_ab + class_c + has_religion, 
+                  family = binomial(link = 'logit'),
+                  data = data_code)
+
+#Left out: No religion, women    
+
+```
+
+\bigskip
+
+Model 2 - Demographics + Region and City
+
+\bigskip
+
+```{r}
+
+model_19_2 <- glm(shared_fake_news_19 ~ sex_men + age_full + race_is_white +
+                    education_high + class_ab + class_c + has_religion + 
+                    region_North + region_Northeast +
+                    region_Southeast + region_South + capital_metrop, 
+                  family = binomial(link = 'logit'),
+                  data = data_code)
+
+```
+
+\bigskip
+
+Model 3 - Demographics + Region and City + Political Orientation
+
+\bigskip
+
+```{r}
+
+model_19_3 <- glm(shared_fake_news_19 ~ sex_men + age_full + race_is_white +
+                    education_high + class_ab + class_c + has_religion +
+                    region_North + region_Northeast +
+                    region_Southeast + region_South + capital_metrop + 
+                    pol_orientation_right + pol_orientation_center +
+                    pol_orientation_left,
+                  family = binomial(link = 'logit'),
+                  data = data_code)
+
+#Left out: religion_No religion + region_Center-West + pol_orientation_none                             
+
+```
+
+\bigskip
+
+Model 4 - Demographics + Region and City + Political Orientation + Government Evaluation
+
+\bigskip
+
+```{r}
+
+model_19_4 <- glm(shared_fake_news_19 ~ sex_men + age_full + race_is_white +
+                    education_high + class_ab + class_c + has_religion + 
+                    region_North + region_Northeast +
+                    region_Southeast + region_South + capital_metrop + 
+                    pol_orientation_right + pol_orientation_center +
+                    pol_orientation_left  + approves_gov,
+                  family = binomial(link = 'logit'),
+                  data = data_code)
+
+#Left out: religion_No religion + region_Center-West + pol_orientation_none            
+
+```
+
+
+\bigskip
+
+Model 5 - Demographics + Region and City + Political Orientation + Government Evaluation + Answers Fake News
+
+\bigskip
+
+```{r}
+
+model_19_5 <- glm(shared_fake_news_19 ~ sex_men + age_full + race_is_white +
+                    education_high + class_ab + class_c + has_religion + 
+                    region_North + region_Northeast +
+                    region_Southeast + region_South + capital_metrop + 
+                    pol_orientation_right + pol_orientation_center +
+                    pol_orientation_left + approves_gov + 
+                    frequency_fake_news + resp_population + resp_gov + 
+                    resp_politicians + resp_press + resp_social_media +
+                    severity_fake_news + fact_checking,
+                  family = binomial(link = 'logit'),
+                  data = data_code)
+
+```
+
+\bigskip
+
+Model 6 - Demographics + Region and City + Political Orientation + Government Evaluation + Pandemic
+
+\bigskip
+
+*attention increased interest in science* 
+
+```{r}
+
+model_19_6 <- glm(shared_fake_news_19 ~ sex_men + age_full + race_is_white +
+                    education_high + class_ab + class_c + has_religion + 
+                    region_North + region_Northeast +
+                    region_Southeast + region_South + capital_metrop + 
+                    pol_orientation_right + pol_orientation_center +
+                    pol_orientation_left  + approves_gov + 
+                    pand2_worse_perception_media + pand3_trust_vaccine + 
+                    pand3_seek_science + pand3_preventive_treat + pand3_masks +
+                    pand5_increased_interest_science, 
+                  family = binomial(link = 'logit'),
+                  data = data_code)
+
+```
+
+\bigskip
+
+Model 7 - Demographics + Region and City + Political Orientation + Government Evaluation + Vote
+
+\bigskip
+
+```{r}
+
+model_19_7 <- glm(shared_fake_news_19 ~ sex_men + age_full + race_is_white +
+                    education_high + class_ab + class_c + has_religion + 
+                    region_North + region_Northeast +
+                    region_Southeast + region_South + capital_metrop + 
+                    pol_orientation_right + pol_orientation_center +
+                    pol_orientation_left + approves_gov + 
+                    vote1_trust_ballot + vote2_eletronic_best_option + 
+                    vote3_worried_hacker + vote3_worried_politics +
+                    vote3_worried_transparency + vote3_worried_tech + 
+                    vote3_worried_tse,
+                  family = binomial(link = 'logit'),
+                  data = data_code)
+
+#Left out: religion_Other religion + pol_orientation_none    
+
+```
+
+\bigskip
+
+Model 8 - All
+
+\bigskip
+
+```{r}
+
+model_19_8 <- glm(shared_fake_news_19 ~ sex_men + age_full + race_is_white +
+                    education_high + class_ab + class_c + has_religion + 
+                    region_North + region_Northeast +
+                    region_Southeast + region_South + capital_metrop + 
+                    pol_orientation_right + pol_orientation_center +
+                    pol_orientation_left + approves_gov +
+                    frequency_fake_news + resp_population + resp_gov + 
+                    resp_politicians + resp_press + resp_social_media +
+                    severity_fake_news + fact_checking + 
+                    pand2_worse_perception_media + pand3_trust_vaccine + 
+                    pand3_seek_science + pand3_preventive_treat + pand3_masks +
+                    pand5_increased_interest_science + vote1_trust_ballot + 
+                    vote2_eletronic_best_option + vote3_worried_hacker + 
+                    vote3_worried_politics + vote3_worried_transparency + 
+                    vote3_worried_tech + vote3_worried_tse,
+                  family = binomial(link = 'logit'),
+                  data = data_code)
+
+```
+
+\bigskip
+
+
+# Models
+
+```{r, results = 'asis', message = FALSE, echo = FALSE}
+
+stargazer(model_19_1, model_19_2, model_19_3, model_19_4,
+          title = "Logit Models Comparison - Up to Government Evaluation", 
+          type = "latex", 
+          digits = 3, 
+          no.space = TRUE, 
+          model.numbers = FALSE,
+          header = FALSE,
+          font.size = "footnotesize",
+          column.sep.width = "-15pt")
+
+```
+
+\newpage
+
+```{r, results = 'asis', message = FALSE, echo = FALSE}
+
+stargazer(model_19_1, model_19_2, model_19_3, model_19_5,
+          title = "Logit Models Comparison - Answers Fake News", 
+          type = "latex", 
+          digits = 3, 
+          no.space = TRUE, 
+          model.numbers = FALSE,
+          header = FALSE,
+          font.size = "footnotesize",
+          column.sep.width = "-15pt")
+
+```
+
+\newpage
+
+```{r, results = 'asis', message = FALSE, echo = FALSE}
+
+stargazer(model_19_1, model_19_2, model_19_3, model_19_6,
+          title = "Logit Models Comparison - Pandemic", 
+          type = "latex", 
+          digits = 3, 
+          no.space = TRUE, 
+          model.numbers = FALSE,
+          header = FALSE,
+          font.size = "footnotesize",
+          column.sep.width = "-15pt")
+
+```
+
+\newpage
+
+```{r, results = 'asis', message = FALSE, echo = FALSE}
+
+stargazer(model_19_1, model_19_2, model_19_3, model_19_7,
+          title = "Logit Models Comparison - Electronic Vote", 
+          type = "latex", 
+          digits = 3, 
+          no.space = TRUE, 
+          model.numbers = FALSE,
+          header = FALSE,
+          font.size = "footnotesize",
+          column.sep.width = "-15pt")
+
+```
+
+\newpage
+
+```{r, results = 'asis', message = FALSE, echo = FALSE}
+
+stargazer(model_19_5, model_19_6, model_19_7, model_19_8,
+          title = "Logit Models Comparison - All Variables", 
+          type = "latex", 
+          digits = 3, 
+          no.space = TRUE, 
+          model.numbers = FALSE,
+          header = FALSE,
+          font.size = "tiny",
+          column.sep.width = "-15pt")
+
+```
+
+\newpage
+
+# Variance Inflation Factor (VIF)
+
+\bigskip
+
+"For a given predictor (p), multicollinearity can assessed by computing a score called the variance inflation factor (or VIF), which measures how much the variance of a regression coefficient is inflated due to multicollinearity in the model.
+
+The smallest possible value of VIF is one (absence of multicollinearity). As a rule of thumb, a VIF value that exceeds 5 or 10 indicates a problematic amount of collinearity (James et al. 2014)."
+
+```{r}
+
+model_1 <- as.data.frame(car::vif(model_19_1)) %>%
+  rownames_to_column("variables")
+
+model_2 <- as.data.frame(car::vif(model_19_2)) %>%
+  rownames_to_column("variables")
+
+model_3 <- as.data.frame(car::vif(model_19_3)) %>%
+  rownames_to_column("variables")
+
+model_4 <- as.data.frame(car::vif(model_19_4)) %>%
+  rownames_to_column("variables")
+
+model_5 <- as.data.frame(car::vif(model_19_5)) %>%
+  rownames_to_column("variables")
+
+model_6 <- as.data.frame(car::vif(model_19_6)) %>%
+  rownames_to_column("variables")
+
+model_7 <- as.data.frame(car::vif(model_19_7)) %>%
+  rownames_to_column("variables")
+
+model_8 <- as.data.frame(car::vif(model_19_8)) %>%
+  rownames_to_column("variables")
+
+vif_test <- model_8 %>%
+  left_join(model_1, by = c("variables" = "variables")) %>%
+  left_join(model_2, by = c("variables" = "variables")) %>%
+  left_join(model_3, by = c("variables" = "variables")) %>%
+  left_join(model_4, by = c("variables" = "variables")) %>%
+  left_join(model_5, by = c("variables" = "variables")) %>%
+  left_join(model_6, by = c("variables" = "variables")) %>%
+  left_join(model_7, by = c("variables" = "variables"))
+
+names(vif_test) <- c("variables", "model_8", "model_1", "model_2", "model_3",
+                     "model_4", "model_5", "model_6", "model_7")
+
+vif_test <- relocate(vif_test, -model_8)
+
+vif_test %>%
+  kable(caption = "Variance Inflation Factor (VIF) per variable and model",
+      align = "c")
+
+
+```
 
