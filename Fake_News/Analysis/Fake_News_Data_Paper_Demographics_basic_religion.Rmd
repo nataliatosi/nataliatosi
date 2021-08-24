@@ -1,0 +1,306 @@
+---
+title: "Fake News Data - Fake News Paper - Demographics (Only used in the paper + Evangelicals)"
+author: "Natália Tosi"
+date: "08/18/2021"
+output: pdf_document
+---
+
+```{r message = FALSE, warning = FALSE, include = FALSE}
+
+knitr::opts_chunk$set(
+  echo = TRUE,
+  message = FALSE,
+  warning = FALSE,
+  fig.align = "center",
+  fig.width = 8, 
+  fig.height = 4
+  )
+
+options(scipen = 999)
+
+library(tidyverse)
+library(broom) 
+library(stargazer)
+library(knitr)
+library(car)
+
+```
+
+\bigskip
+
+```{r}
+
+data_code <- read_csv("fake_news_data_code.csv") %>%
+  select(-1)
+
+```
+
+\bigskip
+
+# Paper Research Questions
+
+\bigskip
+
+  - RQ1. How do demographics (age, gender, political orientation and income), affect the probability to share political fake news online?
+  
+  - RQ2. What is the interaction between political orientation and gender?
+  
+  - RQ3. How does the perception of frequency of political fake news online affect the
+probability to share them?
+
+  - RQ4. How does previous online fake news sharing (unnoticed), affect the probability
+to share political fake news online (on purpose)?
+
+  - RQ5. How does the perception of responsibility of 1) members of the public, 2)
+government, politicians and elected officials and 3) Facebook and Twitter, in trying to prevent fake news affect the probability to share them online?
+
+
+\bigskip
+
+# Model Variables
+
+\bigskip
+
+**Dependent Variable = Shared Fake News (`shared_fake_news_19`)** 
+
+\bigskip
+
+P19 - Have you ever shared a political news story online that you thought at the time was made up? (Single Answer)
+
+1 = Yes; 0 = No
+
+\bigskip
+
+**Independent Variables**
+
+\bigskip
+
+1) Gender
+2) Age
+4) Income (try class and income)
+5) Political Orientation
+
+
+\bigskip
+
+"Data for the demographic variables (i.e., gender, age, income, education and political orientation) were collected using standard survey measurements. 
+
+\bigskip
+
+The perception of frequency of political fake news was measured by asking participants the following question: “How often do you come across news stories online that you think are almost completely made up”, on a four‐point Likert scale, ranging from 1) never, 2) hardly ever, 3) sometimes and, 4) often. 
+
+\bigskip
+
+Unnoticed fake news sharing was measured by asking participants the following question: “Have you ever shared a political news story online that you later found out was made up? (0) No and (1) yes. 
+
+\bigskip
+
+The perception of responsibility was measured by asking participants the following question: “As you may have heard, there have recently been some instances of so called “fake news stories” circulating widely online. 
+
+\bigskip
+
+How much responsibility does each of the following have in trying to prevent made up stories from gaining attention” a) members of the public, b) the government, politicians, and elected officials, c) social networking sites like Facebook and Twitter, and search sites like Google, on a four‐point Likert scale, ranging from: 1) no responsibility at all, 2) not much responsibility, 3) a fair amount of responsibility, 4) a great deal of responsibility."
+
+\bigskip
+
+
+# Data
+
+\bigskip
+
+- P19 = shared_fake_news
+- frequency_fake_news
+- P21 = unnoticed_share
+- public
+- gov and politicians (create one single)
+- social media
+
+```{r}
+
+data_fake_news <- data_code %>%
+  select(sex, age_full, age_60, pol_orientation, P19, frequency_fake_news, P21,
+         resp_population, resp_gov, resp_politicians, resp_press, 
+         resp_social_media, severity_fake_news, shared_fake_news_19, education, 
+         income, class, religion, evaluation, approval, shared_fake_news_19, 
+         race_adj, sex_men, region_North, region_Northeast, `region_Center-West`,
+         region_Southeast, region_South, religion_Catholic, religion_Evangelicals,
+         `religion_Other religion`, `religion_No religion`, `age_60_16-24 age`, 
+         `age_60_25-34 age`, `age_60_35-44 age`, `age_60_45-59 age`, 
+          `age_60_60 or more`, evaluation_Unsure, P21_No, P21_Unsure, P21_Yes,
+         capital_metrop, pol_orientation_right, pol_orientation_center,
+         pol_orientation_left, pol_orientation_none, race_is_white,
+         education_high, income_low, class_ab, class_c, class_de, has_religion) %>%
+  rename(unnoticed_share = P21_Yes) %>%
+  mutate(resp_gov_politicians = if_else(((resp_gov == 1) | (resp_politicians == 1)), 
+                                        1, 0),
+         sex_women = if_else(sex_men == 0, 1, 0))
+
+```
+
+
+\bigskip
+
+# Regressions - All categories
+
+\bigskip
+
+Dependent variable: `shared_fake_news_19`
+
+\bigskip
+
+Independent variables:
+
+1) Gender
+2) Age
+4) Income (class)
+5) Education
+6) Political Orientation
+
+
+\bigskip
+
+## Regression 1 - Share fake news with demographics (sex, age, income, education, political orientation)
+
+\bigskip
+
+```{r}
+
+reg_1 <- glm(shared_fake_news_19 ~ sex_men + age_full + class_ab + 
+               class_c + pol_orientation_right + pol_orientation_center +
+               pol_orientation_left + education_high + religion_Evangelicals, 
+               family = binomial(link = 'logit'),
+               data = data_fake_news)
+
+#Left out: women, class DE, no political orientation
+
+```
+
+\bigskip
+
+## Regression 2 - How does the perception of frequency of political fake news online affect the probability to share them?
+
+\bigskip
+
+```{r}
+
+reg_2 <- glm(shared_fake_news_19 ~ frequency_fake_news + sex_men + age_full + class_ab + 
+               class_c + pol_orientation_right + pol_orientation_center +
+               pol_orientation_left + education_high + religion_Evangelicals,
+               family = binomial(link = 'logit'),
+               data = data_fake_news)
+
+```
+
+\bigskip
+
+## Regression 3 - How does previous online fake news sharing (unnoticed), affect the probability to share political fake news online (on purpose)?
+
+\bigskip
+
+```{r}
+
+reg_3 <- glm(shared_fake_news_19 ~ unnoticed_share + frequency_fake_news + 
+               sex_men + age_full + class_ab + class_c + pol_orientation_right + 
+               pol_orientation_center + pol_orientation_left + education_high +
+               religion_Evangelicals,
+               family = binomial(link = 'logit'),
+               data = data_fake_news)
+
+```
+
+\bigskip
+
+## Regression 4 - How does the perception of responsibility of 1) members of the public, 2) government, politicians and elected officials and 3) Facebook and Twitter, in trying to prevent fake news affect the probability to share them online?
+
+\bigskip
+
+```{r}
+
+reg_4 <- glm(shared_fake_news_19 ~ resp_population + resp_gov_politicians + 
+               resp_social_media + unnoticed_share + frequency_fake_news + 
+               sex_men + age_full + class_ab + class_c + pol_orientation_right + 
+               pol_orientation_center + pol_orientation_left + education_high +
+               religion_Evangelicals,
+               family = binomial(link = 'logit'),
+               data = data_fake_news)
+
+```
+
+
+\bigskip
+
+## Regression 5 - What is the interaction between political orientation and gender?
+
+\bigskip
+
+```{r}
+
+reg_5 <- glm(shared_fake_news_19 ~ resp_population + resp_gov_politicians + 
+               resp_social_media + unnoticed_share + frequency_fake_news + 
+               sex_men + age_full + class_ab + class_c + pol_orientation_right + 
+               pol_orientation_center + pol_orientation_left + education_high + 
+               sex_men*pol_orientation_right + sex_men*pol_orientation_center + 
+               sex_men*pol_orientation_left + religion_Evangelicals,
+               family = binomial(link = 'logit'),
+               data = data_fake_news)
+
+```
+
+\bigskip
+
+```{r, results = 'asis', message = FALSE, echo = FALSE}
+
+stargazer(reg_1, reg_2, reg_3, reg_4, reg_5,
+          title = "Likelihood of Sharing Fake News - Logit Models (basics + evang.)", 
+          type = "latex", 
+          digits = 3, 
+          no.space = TRUE, 
+          model.numbers = FALSE,
+          column.labels = c("Model 1", "Model 2", "Model 3", "Model 4", "Model 5"),
+          header = FALSE,
+          font.size = "small",
+          column.sep.width = "-15pt")
+
+```
+
+\newpage
+
+# Variance Inflation Factor (VIF)
+
+\bigskip
+
+"For a given predictor (p), multicollinearity can assessed by computing a score called the variance inflation factor (or VIF), which measures how much the variance of a regression coefficient is inflated due to multicollinearity in the model.
+
+The smallest possible value of VIF is one (absence of multicollinearity). As a rule of thumb, a VIF value that exceeds 5 or 10 indicates a problematic amount of collinearity (James et al. 2014)."
+
+```{r}
+
+model_1 <- as.data.frame(car::vif(reg_1)) %>%
+  rownames_to_column("variables")
+
+model_2 <- as.data.frame(car::vif(reg_2)) %>%
+  rownames_to_column("variables")
+
+model_3 <- as.data.frame(car::vif(reg_3)) %>%
+  rownames_to_column("variables")
+
+model_4 <- as.data.frame(car::vif(reg_4)) %>%
+  rownames_to_column("variables")
+
+model_5 <- as.data.frame(car::vif(reg_5)) %>%
+  rownames_to_column("variables")
+
+vif_test <- model_1 %>%
+  left_join(model_2, by = c("variables" = "variables")) %>%
+  left_join(model_3, by = c("variables" = "variables")) %>%
+  left_join(model_4, by = c("variables" = "variables")) %>%
+  left_join(model_5, by = c("variables" = "variables"))
+
+names(vif_test) <- c("variables", "model_1", "model_2", "model_3",
+                     "model_4", "model_5")
+
+vif_test %>%
+  kable(caption = "Variance Inflation Factor (VIF) per variable and model",
+      align = "c")
+
+```

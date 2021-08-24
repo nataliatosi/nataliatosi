@@ -161,12 +161,11 @@ Model 1 - Only demographics
 ```{r}
 
 model_19_1 <- glm(shared_fake_news_19 ~ sex_men + age_full + race_is_white +
-                    education_high + class_c + religion_Catholic + 
-                    religion_Evangelicals + `religion_Other religion`, 
+                    education_high + class_ab + class_c + has_religion, 
                   family = binomial(link = 'logit'),
                   data = data_code)
 
-#Left out: religion_No religion    
+#Left out: No religion, women    
 
 ```
 
@@ -179,7 +178,7 @@ Model 2 - Demographics + Region and City
 ```{r}
 
 model_19_2 <- glm(shared_fake_news_19 ~ sex_men + age_full + race_is_white +
-                    education_high + class_c + religion_Catholic + 
+                    education_high + class_ab + class_c + religion_Catholic +
                     religion_Evangelicals + `religion_Other religion`+ 
                     region_North + region_Northeast +
                     region_Southeast + region_South + capital_metrop, 
@@ -197,8 +196,8 @@ Model 3 - Demographics + Region and City + Political Orientation
 ```{r}
 
 model_19_3 <- glm(shared_fake_news_19 ~ sex_men + age_full + race_is_white +
-                    education_high + class_c + religion_Catholic + 
-                    religion_Evangelicals + `religion_Other religion`+ 
+                    education_high + class_ab + class_c + religion_Catholic +
+                    religion_Evangelicals + `religion_Other religion`+
                     region_North + region_Northeast +
                     region_Southeast + region_South + capital_metrop + 
                     pol_orientation_right + pol_orientation_center +
@@ -219,7 +218,7 @@ Model 4 - Demographics + Region and City + Political Orientation + Government Ev
 ```{r}
 
 model_19_4 <- glm(shared_fake_news_19 ~ sex_men + age_full + race_is_white +
-                    education_high + class_c + religion_Catholic + 
+                    education_high + class_ab + class_c + religion_Catholic +
                     religion_Evangelicals + `religion_Other religion`+ 
                     region_North + region_Northeast +
                     region_Southeast + region_South + capital_metrop + 
@@ -242,7 +241,7 @@ Model 5 - Demographics + Region and City + Political Orientation + Government Ev
 ```{r}
 
 model_19_5 <- glm(shared_fake_news_19 ~ sex_men + age_full + race_is_white +
-                    education_high + class_c + religion_Catholic + 
+                    education_high + class_ab + class_c + religion_Catholic +
                     religion_Evangelicals + `religion_Other religion`+ 
                     region_North + region_Northeast +
                     region_Southeast + region_South + capital_metrop + 
@@ -267,7 +266,7 @@ Model 6 - Demographics + Region and City + Political Orientation + Government Ev
 ```{r}
 
 model_19_6 <- glm(shared_fake_news_19 ~ sex_men + age_full + race_is_white +
-                    education_high + class_c + religion_Catholic + 
+                    education_high + class_ab + class_c + religion_Catholic +
                     religion_Evangelicals + `religion_Other religion`+ 
                     region_North + region_Northeast +
                     region_Southeast + region_South + capital_metrop + 
@@ -290,7 +289,7 @@ Model 7 - Demographics + Region and City + Political Orientation + Government Ev
 ```{r}
 
 model_19_7 <- glm(shared_fake_news_19 ~ sex_men + age_full + race_is_white +
-                    education_high + class_c + religion_Catholic + 
+                    education_high + class_ab + class_c + religion_Catholic +
                     religion_Evangelicals + `religion_Other religion`+ 
                     region_North + region_Northeast +
                     region_Southeast + region_South + capital_metrop + 
@@ -303,7 +302,9 @@ model_19_7 <- glm(shared_fake_news_19 ~ sex_men + age_full + race_is_white +
                   family = binomial(link = 'logit'),
                   data = data_code)
 
-#Left out: religion_Other religion + pol_orientation_none    
+#Left out: religion_Other religion + pol_orientation_none  
+
+sum(data_code$has_religion)
 
 ```
 
@@ -316,7 +317,7 @@ Model 8 - All
 ```{r}
 
 model_19_8 <- glm(shared_fake_news_19 ~ sex_men + age_full + race_is_white +
-                    education_high + class_c + religion_Catholic + 
+                    education_high + class_ab + class_c + religion_Catholic +
                     religion_Evangelicals + `religion_Other religion`+ 
                     region_North + region_Northeast +
                     region_Southeast + region_South + capital_metrop + 
