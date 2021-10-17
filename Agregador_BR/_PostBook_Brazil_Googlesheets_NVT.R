@@ -15,7 +15,7 @@ library(tidyverse)
 
 rm(list = ls(all = TRUE))
 
-setwd("/Users/natybaleiuda/Dropbox/My Mac (Natalias-MacBook-Air.local)/Desktop/GitHub/nataliatosi/Agregador_BR")
+setwd("/Users/nvtosi/Desktop/GitHub/nataliatosi/Agregador_BR")
 
 source("R/Extract.r") #load stimsons "extract" function (downloaded from internet)
 observations <- wcalcdiagnosticsQ <-  wcalcdiagnosticsM <- list()
@@ -350,8 +350,6 @@ for(i in 1:length(elec.date)){
 pop.elec <- t(pop.elec)
 save(pop.elec,file="DATA/data_BR_elections.RData")
 write.csv(pop.elec,'DATA/data_BR-elections.csv')
-
-
 
 
 #Produce a plot ##########################				

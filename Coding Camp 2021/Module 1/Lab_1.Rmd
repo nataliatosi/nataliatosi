@@ -1,0 +1,262 @@
+---
+title: "Lab 1 - Coding Camp 2021"
+author: "Natália Tosi"
+date: "9/01/2021"
+output: pdf_document
+---
+
+```{r setup, include = FALSE}
+
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+
+# Guess the Output: Algebra
+
+5. Guess the output of the following code:
+
+```{r}
+
+a <- 3
+
+b <- a^2 + 1
+
+b
+
+```
+
+
+Now, run the code block to check your answer.
+
+
+6. Guess the output of the following code:
+
+```{r}
+
+a <- 10
+b <- 3 %% a
+
+b + 5
+
+```
+
+Hint: If you are not sure what %% does you can try running ?'%%' to better understand.
+
+
+7. Guess the output of the following code:
+
+```{r}
+
+a <- c(1,2,3)
+
+b <- a^2 + 1
+
+b
+
+```
+
+# Guess the Output: Boolean
+
+
+8. Guess the output of the following code:
+
+```{r}
+
+25 >= 14
+
+```
+
+9. Guess the output of the following code:
+
+```{r}
+
+10 != 100
+
+```
+
+10. Guess the output of the following code:
+
+```{r}
+
+7%%5 == 2
+
+```
+
+
+11. Guess the output of the following code:
+
+```{r}
+
+(5 > 7) & (7 * 7 == 49)
+
+FALSE & TRUE
+
+FALSE
+
+```
+
+
+12. Ok, let’s try some logic! Try to figure out each one before running the code!
+
+
+a. 
+
+```{r}
+
+TRUE & FALSE
+
+```
+
+b. 
+
+```{r}
+
+FALSE & FALSE
+
+```
+
+c. 
+
+```{r}
+
+TRUE | (FALSE & TRUE)
+
+TRUE | FALSE
+
+TRUE
+
+```
+
+d. 
+
+```{r}
+
+FALSE | (TRUE | FALSE)
+
+FALSE | TRUE
+
+TRUE
+
+```
+
+e. 
+
+```{r}
+
+(TRUE & (TRUE | FALSE)) | FALSE
+
+(TRUE & TRUE) | FALSE
+
+TRUE | FALSE
+
+TRUE
+
+(male & (IL | NY)) & age == 30
+
+```
+
+
+
+# Data Types
+
+13. Run these lines to create these variables in your environment.
+
+
+```{r}
+
+item_1 <- "Hi, my name is item 1!"
+item_2 <- 7
+item_3 <- FALSE
+
+```
+
+
+What are the type (or mode) of each of these items?
+
+Hint: If you are not sure, you could apply the mode() function to each item and check the output. If you are unsure about how to apply the mode() function, you can always run ?mode().
+
+```{r}
+
+mode(item_1) #character
+
+mode(item_2) #numeric
+
+mode(item_3) #logical
+
+
+typeof(item_1)
+typeof(item_2) #double
+typeof(item_3)
+
+
+x <- 5.5
+y <- 5L
+
+typeof(x)
+mode(y)
+
+
+typeof(y - 0.3)
+
+```
+
+
+14. Guess the output of the following code:
+
+```{r}
+
+(item_2 + 19 <= 25) == item_3
+
+(7 + 19 <= 25) == item_3
+
+(26 <= 25) == FALSE
+
+FALSE == FALSE
+
+TRUE
+
+```
+
+
+Do you remember earlier when you ran ?paste0()? We are now going to try to use this function. In the code block below, initialize two variables that are of mode “character”. The output when you apply paste0() to these variables should be “Hello, world!”.
+
+```{r}
+
+#v1 <-
+#v2 <- 
+
+?paste0()
+
+```
+
+
+```{r}
+
+v1 <- "Hello,"
+v2 <- " world!"
+
+paste0(v1, v2)
+
+v3 <- 5
+v4 <- 10
+
+paste0(v3, v4)
+
+```
+
+```{r}
+
+v1 <- "Hello,"
+v2 <- "world!"
+v3 <- "bye"
+
+paste0(v1," ", v2, " ", v3)
+
+paste(v1, v2, v3, sep = "ABC")
+
+```
+
+
+Well done! You’ve learned how to work with R to perform simple variable assignment and operations!
+

@@ -393,5 +393,3 @@ abline(v=c(as.Date("1994-10-01"),
 dev.off()
 
 
-
-

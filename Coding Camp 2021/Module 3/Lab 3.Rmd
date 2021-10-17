@@ -1,0 +1,531 @@
+---
+title: "Lab 3"
+author: "Natalia Tosi"
+date: "9/7/2021"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+
+# Warm-up
+
+1. In the lecture, we covered c(), :, rep(), seq() among other ways to create vectors.
+
+```{r}
+
+vector_1 <- seq(1, 20, by = 2) 
+vector_1
+
+vector_2 <- rep(c(3, 5), 10)
+vector_2
+
+vector_3 <- c(1,2,3,4,5)
+vector_3
+
+vector_4 <- c(1:20)
+vector_4
+
+```
+
+
+
+```{r}
+
+dolly <- c(9, 10, 11, 21, 13, 14, 15, 16, 17) 
+
+bees <- c("b", "b", "b", "b", "b")
+
+```
+
+
+a. Recreate dolly using :.
+
+```{r}
+
+dolly <- c(9:17)
+
+dolly
+
+```
+
+
+b. Create the same vector using seq().
+
+```{r}
+
+dolly <- seq(9,17)
+
+dolly
+
+```
+
+
+c. Recreate bees using rep().
+
+
+```{r}
+
+bees <- rep("b", 5)
+
+bees
+
+```
+
+
+
+2. We are now going to use the functions rnorm() and runif() to initialize vectors.
+
+```{r}
+random_norm <- rnorm(100)
+
+random_unif <- runif(1000)
+```
+
+```{r}
+hist(random_norm)
+
+```
+
+```{r}
+
+hist(x = random_unif)
+
+?hist()
+
+```
+
+
+```{r}
+
+set.seed(777)
+
+random_1 <- rnorm(10)
+
+random_1
+
+```
+
+
+a. How long are the vectors random_norm and random_unif? Use length() to verify.
+
+```{r}
+
+length(random_norm)
+
+length(random_unif)
+
+```
+
+
+b. What are the largest and smallest values in random_norm and random_unif? Use min() and max().
+
+
+```{r}
+
+library(tidyverse) 
+
+ 
+?matrix()
+
+?as_tibble()
+
+random_norm <- as_tibble(random_norm)
+
+```
+
+
+```{r}
+# random_norm
+
+max(random_norm)
+min(random_norm)
+
+
+# We could also use range, but this would give us a vector as output
+
+range(random_norm)
+
+```
+
+
+```{r}
+# random_unif
+
+max(random_unif)
+min(random_unif)
+
+# We could also use range, but this would give us a vector as output
+
+range(random_unif)
+
+```
+
+
+c. Use mean() and sd() to calculate the mean and standard deviation of the two distributions.
+
+```{r}
+
+# random_norm
+mean(random_norm)
+sd(random_norm)
+
+```
+
+```{r}
+
+#random_unif
+mean(random_unif)
+sd(random_unif)
+
+```
+
+
+d. Create a new vector with 10000 draws from the standard normal distribution.
+
+
+```{r}
+
+new_vector <- rnorm(10000)
+
+```
+
+
+e. rnorm() by default sets mean = 0 (see ?rnorm). Create a vector of 10000 draws from the normal distribution with mean = 1. Use mean() to verify.
+
+```{r}
+
+vector_mean_1 <- rnorm(10000, mean = 1)
+
+mean(vector_mean_1)
+
+```
+
+
+Notice the functions min(), max(), mean() and sd() all take a vector with many values and summarize them as one value. These are good to use with summarize() when doing data analysis on simple dataframes.
+
+```{r}
+
+# Don't need to use summarize() now, this is just a suggestion for the future
+
+```
+
+
+# Data Types
+
+a. Use typeof() to verify the data types of dolly, bees, random_unif
+
+```{r}
+
+typeof(dolly)
+
+typeof(bees)
+
+typeof(random_unif)
+
+```
+
+
+b. Coerce dolly to a character vector. Recall we have functions as.<type>() for this kind of coercion.
+
+```{r}
+dolly <- as.character(dolly)
+
+typeof(dolly)
+
+dolly
+```
+
+
+```{r}
+
+# If I wanted to convert it back to numeric, I could use the as.numeric() function because I didn't change any element inside my vector
+
+dolly <- as.numeric(dolly)
+
+typeof(dolly)
+
+dolly
+
+```
+
+c. Try to coerce bees to type numeric. What does R do when you ask it to turn “b” into a number?
+
+```{r}
+
+bees <- as.numeric(bees)
+
+bees
+
+# Important to notice that R did convert the elements, but saved NA instead of each value
+
+```
+
+
+# Vectorized Math
+
+3. a and b are vectors of length 10. Look at them in the console.
+
+
+```{r}
+
+a <- c(1:10)
+b <- rep(c(2, 4), 5)
+
+a
+b
+c
+c <- c(1:8)
+```
+
+
+a. Add a and b element by element.
+
+```{r}
+
+a + b
+
+a + c
+
+a + 5
+
+```
+
+
+b. Subtract a and b element by element.
+
+```{r}
+
+a - b
+
+```
+
+
+c. Divide a by b element by element.
+
+```{r}
+
+a/b
+
+```
+
+
+d. Multiply a and b element by element.
+
+```{r}
+
+a*b
+
+```
+
+
+e. Raise the element of a to the power of b element by element.
+
+```{r}
+
+vector_1 <- as_tibble(a^b)
+
+
+```
+
+
+f. Multiply each element of a by 3 then subtract b
+
+```{r}
+
+(a*3) - b
+
+```
+
+
+g. Raise each element of b to the third power.
+
+```{r}
+
+b^3
+
+```
+
+
+h. Take the square root of each element of a.
+
+
+```{r}
+
+sqrt(a)
+
+```
+
+
+# Calculating Mean and Standard Deviation
+
+## Calculating the Mean
+
+In this exercise, we will calculate the mean of a vector of random numbers. We will practice assigning new variables and using functions in R.
+
+We can run the following code to create a vector of 1000 random numbers. The function set.seed() ensures that the process used to generate random numbers is the same across computers.
+
+Note: rf() is a R command we use to generate 1000 random numbers according to the F distribution, and 10 and 100 are parameters that specify how “peaked” the distribution is.
+
+
+```{r}
+
+set.seed(1)
+
+random_numbers <- rf(1000, 10, 100)
+
+?rf()
+
+```
+
+
+Write code that gives you the sum of random_numbers and saves it to a new variable called numbers_sum:
+
+Hint: To sum the numbers in a vector, use the sum() function.
+
+Note: You don’t automatically see the output of numbers_sum when you assign it to a variable. Type numbers_sum into the console and run it to see the value that you assigned it.
+
+
+```{r}
+
+numbers_sum <- sum(random_numbers)
+
+numbers_sum
+
+```
+
+
+Write code that gives you the number of items in the random_numbers vector and saves it to a new variable called numbers_count:
+
+Hint: To count the number of items in a vector, use the length() function.
+
+```{r}
+
+numbers_count <- length(random_numbers)
+
+numbers_count
+
+```
+
+
+Now write code that uses the above two variables to calculate the average of random_numbers and assign it to a new variable called this_mean.
+
+
+```{r}
+
+this_mean <- numbers_sum/numbers_count
+
+this_mean
+
+```
+
+
+What number did you get? It should have been 1.018. If it isn’t, double check your code!
+
+R actually has a built in function to calculate the mean for you, so you don’t have to remember how to build it from scratch each time! Check your above answer by using the mean() function on the random_numbers vector.
+
+
+```{r}
+
+d <- c(1,2,3,4,NA)
+
+mean(random_numbers, na.rm = TRUE)
+
+?mean()
+
+mean(d, na.rm = TRUE, trim = 0)
+
+sum(d)
+
+sum(is.na(d))
+
+
+```
+
+
+
+## Calculating the Standard Deviation
+
+
+Now that you’ve got that under your fingers, let’s move on to standard deviation.
+
+We will be converting the following formula for calculating the sample standard deviation into code:
+
+
+For this, we’ll review the concept of vectorization. This means that an operation like subtraction will act on all numbers in a vector at the same time.
+
+Subtract this_mean from the random_numbers vector. Did each number in random_numbers change?
+
+```{r}
+
+random_numbers - this_mean
+
+```
+
+
+Try to write the formula for standard deviation in R code using the sqrt(), sum(), and length() functions, along with other operators (^, /, -). Assign it to a new variable called this_sd. Watch out for your parentheses!
+
+
+```{r, echo = FALSE}
+
+___ <- sqrt(sum((___ - this_mean) ^ 2) / (length(___) - 1))
+
+```
+
+
+```{r}
+
+this_sd <- sqrt(sum((random_numbers - this_mean) ^ 2) / (length(random_numbers) - 1))
+
+
+# You could also use 'numbers_count' because you already saved the length of your vector as a new object
+
+this_sd <- sqrt(sum((random_numbers - this_mean) ^ 2) / (numbers_count - 1))
+
+this_sd
+
+```
+
+
+What number did you get for this_sd, or the standard deviation of random_numbers? If you didn’t get 0.489704, recheck your code!
+
+
+```{r}
+
+this_sd
+
+```
+
+
+R also has a built in function for standard deviation. Check if you calculated the standard deviation correctly by using the sd() function on the random_numbers vector.
+
+
+```{r}
+
+sd(random_numbers)
+
+```
+
+
+
+## Making a Histogram of Our Numbers
+
+What do these random numbers look like, anyway? We can use base plotting in R to visualize the distribution of our random numbers.
+
+Run the following code to visualize the original distribution of random_numbers as a histogram.
+
+
+```{r}
+
+hist(random_numbers)
+
+```
+
+Notice how most of the values are concentrated on the left-hand side of the graph, while there is a longer “tail” to the right? Counterintuitively, this is known as a right-skewed distribution. When we see a distribution like this, one common thing to do is to normalize it.
+
+This is also known as calculating a z-score, which we will cover next.
+

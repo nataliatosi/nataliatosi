@@ -1,0 +1,56 @@
+---
+title: "Lab 2 - Tutor"
+author: "Natalia Tosi"
+date: "9/3/2021"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+
+library(tidyverse)
+
+college_raw <- read_csv("College.csv")
+
+View(college)
+
+```
+
+```{r}
+
+?read.csv(file = "College.csv", header = TRUE, sep = ",")
+
+glimpse(college_raw)
+
+
+summary(college_raw)
+
+tail(college_raw, 10)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

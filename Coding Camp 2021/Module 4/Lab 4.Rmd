@@ -1,0 +1,415 @@
+---
+title: "Lab 4"
+author: "Natalia Tosi"
+date: "9/9/2021"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+#Warm-up
+
+
+1. Which of these are commands from dplyr?
+  a. mutate()
+  b. filter()
+  c. mean()
+  
+  
+```{r}
+
+?mean()
+
+```
+  
+
+--> A and B
+
+
+2. In the videos, you learned about head(). What if you wanted to get the tail end of your data instead?
+
+
+--> tail(x)
+
+3. Imagine you have a data set, df with 4 variables, county, year, income, and employment. You only need the year and employment status of people whose income is below $5000. Which two dplyr commands do you need to do this? Can you write the code for this?
+
+```{r, echo = FALSE}
+
+# select and filter
+
+df %>% #and then
+  filter(income < 5000) %>% #and then
+  select(year, employment)
+
+```
+
+
+4. Remember the mean() function? What dplyr commands would we need if we want the average income in counties for the year 2003? Can you write the code for this?
+
+```{r, echo = FALSE}
+
+# filter, summarize
+
+df_2003 <- df %>% #and then
+  filter(year == 2003)
+
+mean_2003 <- mean(df_2003$income)
+
+
+# OR
+
+mean_2003 <- mean(df$income[df$year == 2003])
+
+
+# Save a new object called mean_2003, that calculates the mean of the column income from my DF dataframe, subsetting whenever my column year from the DF dataframe equals to 2003.
+
+# OR
+
+df_2003 <- df %>%
+  filter(year == 2003) %>%
+  summarize(mean_2003 = mean(income))
+
+```
+
+
+5. Load tidyverse, haven, and readxl in your Rmd. If you haven’t yet, download the first data set here and put the data in your data folder and set your working directory. The data source is the World Inequality Database where you can find data about the distribution of income and wealth in several contries over time. Outside of lab time, check out wid.world for more information.
+
+```{r}
+
+library(tidyverse)
+library(haven)
+library(readxl)
+
+```
+
+
+6. If you followed the set-up from above, you should be able to run the following code with no error.
+
+```{r}
+
+wid_data <- read_xlsx("world_wealth_inequality.xlsx")
+
+?read_xlsx()
+
+```
+
+
+# Examining ‘wid_data
+
+1. Look at the data. What is the main problem here?
+
+```{r}
+
+#View(wid_data)
+
+```
+
+
+2. We don’t have columns headers. The World Inequality Database says the “structure” of the download is as shown in the image below.
+
+So we can create our own header in read_xlsx. Calling the read_xlsx function using readxl::read_xlsx() ensures that we use the read_xlsx() function from the readxl package.
+
+```{r}
+
+wid_data_raw <- readxl::read_xlsx("world_wealth_inequality.xlsx",
+                              col_names = c("country", "indicator",
+                                        "percentile", "year", "value"))
+
+head(wid_data_raw)
+
+```
+
+
+Now when we look at the second column. It’s a mess. We can separate it based on where the \n are and then deal with the data later. Don’t worry about this code right now.
+
+
+```{r}
+
+wid_data_raw <- readxl::read_xlsx("world_wealth_inequality.xlsx",
+                                  col_names = c("country", "indicator",
+                                                "percentile", "year", 
+                                                "value")) %>%
+  separate(indicator, sep = "\n", into = c("row_tag", "type", "notes"))
+
+
+head(wid_data_raw)
+```
+
+Note: We want a clean reproducible script so you should just have one block of code reading the data: that last one. The other code were building blocks. If you want to keep “extra” code temporarily in your script you can use # to comment out the code.
+
+
+# Manipulating World Inequality Data with dplyr
+
+Now we have some data and are ready to use select(), filter(), mutate(), summarize() and arrange() to explore it.
+
+1. The data comes with some redundant columns that add clutter when we examine the data. What dplyr verb lets you choose what columns to see? Remove the unwanted column row_tag and move notes to the last column position and assign the output to the name wid_data.
+
+```{r}
+
+#View(wid_data_raw)
+
+# select
+
+wid_data <- wid_data_raw %>% #and then
+  select(-row_tag) %>%
+  select(-notes, everything()) 
+
+
+# OR
+
+wid_data <- wid_data_raw %>%
+  select(-row_tag, -notes, notes)
+
+```
+
+
+Hint: You can type all the column names or use the slicker select(-notes, everything())
+
+2. Let’s start to dig into the data. We have two types of data: “Net personal wealth” and “National income”. Start by filter()ing the data so we only have “Net personal wealth” for France, name the resulting data french_data and then run the code below to visualize the data.
+
+
+```{r}
+
+# replace each ... with relevant code
+french_data <- wid_data %>% #and then
+  filter(type == "Net personal wealth", # AND CONDITION 
+         country == "France")
+
+head(french_data)
+
+```
+
+Note: When refering to words in the data, make sure they are in quotes “France”, “Net personal wealth”. When referring to columns, do not use quotes.
+
+```{r}
+
+french_data %>%  #and then
+  ggplot(aes(y = value, x = year, color = percentile)) + 
+  geom_line()
+
+```
+
+
+Now we’re getting somewhere! The plot shows the proportion of national wealth owned by different segements of French society overtime. For example in 2000, the top 1 percent owned roughly 28 percent of the wealth, while the bottom 50 percent owned abouy 7 percent.
+
+3. Explain the gaps in the plot. Using filter(), look at french_data in the years between 1960 and 1970. Does what you see line up with what you guessed by looking at the graph?
+
+
+```{r}
+
+french_data %>%
+  filter(year %in% c(1960:1970))
+
+
+# OR
+
+french_data %>%
+  filter(year >= 1960 & year <= 1970)
+
+# OR
+
+french_data %>%
+  filter(year %in% seq(1960,1970))
+
+
+```
+
+
+4. Using mutate(), create a new column called perc_national_wealth that equals value multiplied by 100. Adjust the graph code so that the y axis shows perc_national_wealth instead of value.
+
+
+```{r}
+
+french_data <- french_data %>% #AND THEN
+  mutate(perc_national_wealth = value * 100)
+
+
+french_data %>% 
+  ggplot(aes(y = perc_national_wealth, x = year, color = percentile)) + 
+  geom_line()
+
+```
+
+
+5. Now following the same steps, explore data from the “Russian Federation”.
+
+```{r}
+
+russia_data <- wid_data %>%
+  filter(type == 'Net personal wealth', 
+         country == 'Russian Federation') %>%
+  mutate(perc_national_wealth = value * 100)
+
+
+russia_data %>%
+  ggplot(aes(y = perc_national_wealth, x = year, color = percentile)) +
+  geom_line()
+
+```
+
+
+6. The data for “Russian Federation” does not start in 1900, but our y-axis does. That’s because we have a bunch of NAs. Let’s filter out the NAs and remake the plot. You cannot test for NA using == (Try: NA == NA). Instead we have a function called is.na(). (Try: is.na(NA) and !is.na(NA)).
+
+```{r}
+
+russia_data <- russia_data %>% 
+  filter(!is.na(perc_national_wealth))
+
+#OR
+
+russia_data <- russia_data %>% 
+  na.omit(perc_national_wealth)
+
+```
+
+
+7. Use two dplyr verbs to figure out what year the bottom 50 percent held the least wealth. First, choose the rows that cover the bottom 50 percent and then sort the data in descending order using arrange().
+
+Hint: Look at the examples in ?arrange
+
+
+```{r}
+
+# replace ... with relevant code
+russia_data %>% 
+  filter(percentile == "p0p50") %>% 
+  arrange(desc(value)) # or -value
+
+```
+
+
+8. For both the Russian Federation and French data, calculate the average proportion of wealth owned by the top 10 percent over the period from 1995 to 2010. You’ll have to filter and then summarize with summarize().
+
+
+```{r}
+
+french_data %>%
+  filter(percentile == "p90p100",
+         year >= 1995 & year <= 2010) %>%
+  summarize(top10 = mean(value))
+
+
+russia_data %>%
+  filter(percentile == "p90p100",
+         year >= 1995 & year <= 2010) %>%
+  summarize(top10 = mean(value))
+
+```
+
+
+# Manipulating Midwest Demographic Data with dplyr
+
+
+1. Now we’ll use midwestern demographic data which is at this link. The dataset includes county level data for a single year. We call data this type of data “cross-sectional” since it gives a point-in-time cross-section of the counties of the midwest. (The world inequality data is “timeseries” data).
+
+2. Save midwest.dta in your data folder and load it into R.
+
+
+```{r}
+
+midwest <- read_dta('midwest.dta')
+
+```
+
+
+3. Run the following code to get a sense of what the data looks like:
+
+```{r}
+
+glimpse(midwest)
+
+```
+
+4. I wanted a tibble called midwest_pop that only had county identifiers and the 9 columns from midwest concerned with population counts. Replicate my work to create midwest_pop on your own.
+
+Hint: notice that all the columns start with the same few letters
+
+```{r}
+
+names(midwest)
+
+#colnames(midwest)
+
+```
+
+Hint: I went to ?select and found a selection helper that allowed me to select those 9 columns without typing all their names
+
+```{r}
+
+# replace ... with relevant code
+# midwest_pop <- midwest %>% select(county, state, ...)
+
+midwest_pop <- midwest %>% #and then
+  select(county, state, starts_with("pop"))
+
+names(midwest_pop)
+
+```
+
+5. From midwest_pop calculate the area of each county. What’s the largest county in the midwest? How about in Illinois?
+
+Notice that popdensity = poptotal/area
+
+```{r}
+
+midwest_pop %>%
+  mutate(area = poptotal/popdensity) %>%
+  arrange(desc(area)) %>%
+  select(county, state, area)
+
+```
+
+
+6. From midwest_pop calculate percentage adults for each county. What county in the midwest has the highest proportion of adults? What’s county in the midwest has the lowest proportion of adults?
+
+```{r}
+
+midwest_pop_perc <- midwest_pop %>%
+  mutate(perc_adults = popadults/poptotal) %>%
+  arrange(desc(perc_adults)) %>%
+  select(county, state, perc_adults)
+
+head(midwest_pop_perc, 1)
+
+tail(midwest_pop_perc, 1)
+
+```
+
+
+7. How many people live in Michigan?
+
+```{r}
+
+midwest_pop %>%
+  filter(state == "MI") %>%
+  summarize(totalpop = sum(poptotal))
+
+
+#OR
+
+sum(midwest_pop$poptotal[midwest_pop$state == "MI"])
+
+```
+
+
+8. Note that together population density and population can give you information about the area (geographic size) of a location. What’s the total area of Illinois? You probably have no idea what the units are though. If you google, you’ll find that it doesn’t align perfectly with online sources. Given the units don’t align with other sources, can this data still be useful?
+
+
+```{r}
+
+midwest_pop %>%
+  filter(state == 'IL') %>%
+  mutate(area = poptotal/popdensity) %>%
+  summarise(totalarea = sum(area))
+
+```
+
+
+
+Well done! You’ve learned how to work with R to perform simple data manipulation and analysis!
+
+Want to improve this tutorial? Report any suggestions/bugs/improvements on here! We’re interested in learning from you how we can make this tutorial better.
+

@@ -1,0 +1,106 @@
+---
+title: "Fake_News_Women"
+author: "Natalia Tosi"
+date: "10/12/2021"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r message = FALSE, warning = FALSE, include = FALSE}
+
+knitr::opts_chunk$set(
+  echo = TRUE,
+  message = FALSE,
+  warning = FALSE,
+  fig.align = "center",
+  fig.width = 8, 
+  fig.height = 4
+  )
+
+options(scipen = 999)
+
+library(tidyverse)
+library(broom) 
+library(stargazer)
+library(knitr)
+library(car)
+
+```
+
+\bigskip
+
+```{r}
+
+data_code <- read_csv("fake_news_data_code.csv") %>%
+  select(-1)
+
+```
+
+\bigskip
+
+```{r}
+
+colnames(data_code)
+
+data_clean <- data_code %>%
+  select(region, sex, age_full, P1, P2, gov_trust, pol_orientation, 
+         interest_politics, interest_news, same_ideology_news, P19, 
+         severity_fake_news, trust_agencies, share_news, pand3_trust_vaccine,
+         pand3_seek_science, pand3_masks, pand5_increased_interest_science, 
+         vote1_trust_ballot, "evaluation_Excellent/Good", evaluation_Regular,
+         "evaluation_Bad/Terrible", capital_metrop, approves_gov, 
+         pol_orientation_right, pol_orientation_center, pol_orientation_left,
+         pol_orientation_none, race_is_white, education_high, income_low,
+         class_ab, class_c, class_de, has_religion, education_full, race,
+         religion_full, income_full, class_full, religion, shared_fake_news_19,
+         race_adj, region_North, region_Northeast, "region_Center-West", 
+         region_Southeast, region_South, religion_Catholic, religion_Evangelicals,
+         "religion_Other religion", "religion_No religion"
+    
+    
+    
+    
+    
+  ) %>%
+  rename(unnoticed_share = P21_Yes) %>%
+  mutate(resp_gov_politicians = if_else(((resp_gov == 1) | (resp_politicians == 1)), 
+                                        1, 0),
+         sex_women = if_else(sex_men == 0, 1, 0))
+
+
+
+
+
+```
+
+
+
+```{r}
+
+data_fake_news <- data_code %>%
+  select(sex, age_full, age_60, pol_orientation, P19, frequency_fake_news, P21,
+         resp_population, resp_gov, resp_politicians, resp_press, 
+         resp_social_media, severity_fake_news, shared_fake_news_19, education, 
+         income, class, religion, evaluation, approval, shared_fake_news_19, 
+         race_adj, sex_men, region_North, region_Northeast, `region_Center-West`,
+         region_Southeast, region_South, religion_Catholic, religion_Evangelicals,
+         `religion_Other religion`, `religion_No religion`, `age_60_16-24 age`, 
+         `age_60_25-34 age`, `age_60_35-44 age`, `age_60_45-59 age`, 
+          `age_60_60 or more`, evaluation_Unsure, P21_No, P21_Unsure, P21_Yes,
+         capital_metrop, pol_orientation_right, pol_orientation_center,
+         pol_orientation_left, pol_orientation_none, race_is_white,
+         education_high, income_low, class_ab, class_c, class_de, has_religion) %>%
+  rename(unnoticed_share = P21_Yes) %>%
+  mutate(resp_gov_politicians = if_else(((resp_gov == 1) | (resp_politicians == 1)), 
+                                        1, 0),
+         sex_women = if_else(sex_men == 0, 1, 0))
+
+```
+
+
+
+
+

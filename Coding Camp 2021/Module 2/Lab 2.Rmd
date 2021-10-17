@@ -1,0 +1,539 @@
+---
+title: "Lab 2"
+author: "Natalia Tosi"
+date: "9/2/2021"
+output: pdf_document
+---
+
+```{r setup, include = FALSE}
+
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+
+```{r}
+
+library(tidyverse)
+rm(list = ls())
+options(scipen = 999)
+
+```
+
+
+
+# Warm-up
+
+1. Create a new Rmd and add code to load the tidyverse package.
+
+2. Your classmate comes to you and says they can’t get data to load after restarting their R session. You see the code:
+
+```{r, eval = FALSE}
+
+#install.packages("haven")
+
+awesome_data <- read_dta("awesome_data.dta")
+
+```
+
+Error in read_dta("awesome_data.dta") : could not find function "read_dta"
+
+Diagnose the problem.
+
+*Note*: If they say the code worked before, it’s likely they had loaded haven in the console or perhaps in an earlier script. R packages will stay attached as long as the R session is live.
+
+```{r, eval = FALSE}
+
+# install.packages("haven")
+
+library(haven)
+
+awesome_data <- read_dta("awesome_data.dta")
+
+?read_dta()
+
+```
+
+3. In general, once you have successfully used install.packages(pkg) for a “pkg”, you won’t need to do it again. Install haven and readxl using the console.
+
+```{r}
+
+# install.packages("haven")
+# install.packages("readxl")
+
+```
+
+
+4. In your script, load haven and readxl. Notice that if you had to restart R right now. You could reproduce the entire warm-up by running the script. We strive for reproducibility by keeping the code we want organized in scripts or Rmds.
+
+```{r}
+
+library(haven)
+library(readxl)
+
+```
+
+
+5. It’s good practice when starting a new project to clear your R environment. This helps you make sure you are not relying on data or functions you wrote in another project. After you library() statements add the following code rm(list = ls()).
+
+```{r}
+
+rm(list = ls())
+
+
+x <- 6
+
+y <- 76
+
+
+rm(x)
+
+```
+
+
+6. rm() is short for remove. Find the examples in ?rm and run them in the console.
+
+
+
+# ISLR Chapter 2 Q8
+
+
+Before reading the data into R, it can be viewed in Excel or a text editor. Make sure that you have the directory set to the correct location for the data.
+
+
+a. Use the base R read.csv() function to read the data into R with option stringsAsFactors=T (this is needed later on for plotting figures). Call the loaded data college.
+
+
+b. Look at the data using the View() function. You should notice that the first column is just the name of each university. Load your data and then try the following commands:
+
+```{r}
+
+#set your working directory, fill in your code after this line
+
+getwd()
+
+setwd("/Users/nvtosi/Desktop/GitHub/nataliatosi/Coding Camp 2021/Module 2")
+
+
+#read in the file College.csv using read.csv() with option `stringsAsFactors=T`
+
+college_raw <- read.csv("College.csv")
+
+college_clean <- as_factor(college_raw[,typeof(college_raw) == "character")]
+
+college_raw[,"Private"]
+                           
+                           
+#Give data frame college rownames
+
+rownames(college_clean) <- college_clean[,1] 
+
+rownames(college_clean)
+
+
+college_clean[row, column]
+
+# Please comment out View function after using it. Otherwise you'll see some error when knit.
+
+# View(college_clean)
+
+```
+
+
+
+c. You should see that there is now a row.names column with the name of each university recorded. This means that R has given each row a name corresponding to the appropriate university. R will not try to perform calculations on the row names. Next, we will remove the first column in the data where the names are stored. Try
+
+
+```{r}
+
+#Use a negative number to generate a subset with all but one column
+
+# college[, -c(1, 2, 3)]  will generate a subset with all but the first three columns
+
+college <- college[,-1]
+
+
+# as.factor can turn a character column to a factor column so that we can use it to plot later on
+
+college$Private <- as.factor(college$Private)
+
+
+# There are also other ways of doing this operation, which we will learn later
+
+#View(college)
+
+```
+
+
+Now you should see that the first data column is Private. Note that another column labeled row.names now appears before the Private column. However, this is not a data column but rather the name that R is giving to each row.
+
+i. Use the summary() function to produce a numerical summary of the variables in the data set. Hint: summary() takes in an object such as data.frame and return the summery results
+
+
+```{r}
+
+summary(college)
+
+summary(college$Apps)
+
+```
+
+
+ii. Use the pairs() function to produce a scatterplot matrix of the first five columns or variables of the data. Recall that you can reference the first five columns of a data frame dat using dat[,1:5]
+
+```{r}
+
+pairs(college[,1:5])
+
+# subset object_name[row,column]
+
+
+# 1st: Select columns from 1 to 5
+# 2nd: Generate a scatterplot with the 5 columns
+
+```
+
+
+iii. Use the plot() function to produce side-by-side boxplots of Outstate versus Private. Hint: plot() takes two arguments one vector for x axis and one vector for y axis. Try plot(dat$col_name, dat$col_name).
+
+```{r}
+
+plot(y = college$Outstate, x = college$Private)
+
+```
+
+
+```{r}
+
+# replicate "No" for the same times as the number of colleges using rep()
+
+Elite <- rep("No", nrow(college))
+
+
+Elite
+
+# change the values in Elite for colleges with proportion of students coming from 
+# the top 10% of their high school classes exceeds 50 % to "Yes"
+
+Elite[college$Top10perc > 50] <- "Yes"
+
+Elite
+
+# Getting the variable called `Elite`, then it is subsetting the corresponding 
+# elements where college dataset have the column/variable Top10perc greater than 
+# 50 and assigning it to "Yes".
+
+
+# as.factor change ELite, a character vector to a factor vector (we will touch on 
+# factors later in class) 
+
+Elite <- as.factor(Elite)
+
+# add the newly created vector to the college data frame
+
+college <- data.frame(college, Elite)
+
+```
+
+iv. Use the summary() function to see how many elite universities there are. Now use the plot() function to produce side-by-side boxplots of Outstate versus Elite.
+
+```{r}
+
+summary(college$Elite)
+
+```
+
+```{r}
+
+plot(y = college$Outstate, x = college$Elite)
+
+```
+
+
+Continue exploring the data, and provide a brief summary of what you discover.
+
+
+# ISLR Chapter 2 Q9
+
+This exercise involves the Auto data set. na.omit() removes the missing values from the data and returns a new data frame.
+
+```{r}
+
+#load the Auto.csv into a variable called auto using read.csv()
+
+getwd()
+
+auto <- read.csv("Auto.csv")
+
+# View(auto)
+
+# remove all rows with missing values using na.omit()
+
+
+sum(is.na(auto))
+
+auto <- na.omit(auto)
+
+```
+
+
+We can use class() to check which of the columns are quantitative (numeric or integer), and which are qualitative (logical or character). And sapply() function takes in a data frame and a function (in this case class()), apply the class function to each column. Try the following commands:
+
+
+```{r}
+
+#apply the class() function to each column of auto data frame
+
+sapply(auto, class)
+
+?sapply()
+
+?class()
+
+```
+
+```{r}
+
+sapply(auto, mode)
+
+```
+
+```{r}
+
+sapply(auto, typeof)
+
+```
+
+
+
+a. What is the range of each quantitative columns? You can answer this using the range() function. Hint: You can call range() function individually on each column. You can also subset the quantitative columns by creating a variable quant_cols equal to all columns with a numeric mode, then use sapply the function range() with the data frame with only quantitative columns. This is not required.
+
+```{r}
+
+sapply(auto, range)
+
+```
+
+OR
+
+
+```{r}
+
+quant_cols <- auto[,(sapply(auto, mode) == "numeric")]
+
+
+# object_name[row, column]
+
+sapply(quant_cols, range)
+
+```
+
+
+b. Using the functions mean() and sd(). Find out what is the mean and standard deviation of each quantitative columns?
+
+```{r}
+
+# MEAN
+
+sapply(quant_cols, mean)
+
+
+```
+
+```{r}
+
+# SD
+
+sapply(quant_cols, sd)
+
+```
+
+
+c. Now remove the 10th through 85th observations (rows). What is the range, mean, and standard deviation of each column in the subset of the data that remains? Hint: We’ve seen removing columns in question 8. To remove the rows, we can use the negative sign - again. For example, auto[-c(1,3),] removes the first and third row
+
+```{r}
+
+# object_name[row, column]
+
+reduced_auto <- auto[-c(10:85),(sapply(auto, mode) == "numeric")]
+
+# Subsetting rows (excluding 10th to 85th) and only quant columns
+
+```
+
+
+```{r}
+
+# RANGE
+
+sapply(reduced_auto, range)
+
+```
+
+
+```{r}
+
+# MEAN
+
+sapply(reduced_auto, mean)
+
+```
+
+
+```{r}
+
+# SD
+
+sapply(reduced_auto, sd)
+
+```
+
+
+d. Using the full data set, investigate the columns graphically, using scatterplots (pairs or plot) or other tools of your choice. Create some plots highlighting the relationships among the columns. Comment on your findings.
+
+```{r}
+
+plot(x = auto$cylinders, y = auto$weight)
+
+```
+
+```{r}
+
+plot(x = auto$displacement, y = auto$horsepower)
+
+```
+
+```{r}
+
+pairs(auto[,1:3])
+
+pairs(quant_cols)
+
+```
+
+e. Suppose that we wish to predict gas mileage (mpg) on the basis of the other numerical variables. Do your plots suggest that any of the other variables might be useful in predicting mpg? Justify your answer.
+
+
+```{r}
+
+plot(x = auto$cylinders, y = auto$mpg)
+
+```
+
+```{r}
+
+plot(x = auto$displacement, y = auto$mpg)
+
+#edit here
+
+```
+
+```{r}
+
+plot(x = auto$horsepower, y = auto$mpg)
+
+```
+```{r}
+
+plot(x = auto$weight, y = auto$mpg)
+
+```
+
+```{r}
+
+plot(x = auto$acceleration, y = auto$mpg)
+
+```
+
+
+# ISLR Chapter 2 Q10
+
+This exercise involves the Boston housing data set.
+
+To begin, load in the Boston data set. The Boston data set is part of the MASS library in R. You may need to install the package using install.packages() function if you haven’t done so.
+
+
+```{r}
+
+# Need to put it inside quotation mark
+
+#install.packages("MASS")
+
+library(MASS)
+
+```
+
+
+Now the data set is contained in the object Boston.
+
+
+```{r}
+
+Boston
+
+# You can assign it to a new variable to save it in your global environment
+
+Boston <- Boston
+
+```
+
+Read about the data set:
+
+```{r}
+
+?Boston
+
+```
+
+
+a. How many rows are in this data set? How many columns? What do the rows and columns represent?
+
+```{r}
+
+nrow(Boston)
+
+ncol(Boston)
+
+```
+
+OR
+
+```{r}
+
+dim(Boston)
+
+```
+
+
+b. Make some pairwise scatterplots of the columns in this data set. Describe your findings. Hint: Use function pairs()
+
+
+```{r}
+
+pairs(Boston)
+
+```
+
+
+c. How many of the suburbs in this data set bound the Charles river? Hint: Subset the data using a logical vector to check if variable chas == 1, then use nrow() to see the number of suburbs.
+
+```{r}
+
+nrow(Boston[Boston$chas == 1,])
+
+```
+
+
+d. Using median(), find out what is the median pupil-teacher ratio among the towns in this data set?
+
+```{r}
+
+median(Boston$ptratio)
+
+```
+
+
+Well done! You’ve learned how to work with R to read in data and perform some simple analysis and exploration!
+
+Want to improve this tutorial? Report any suggestions/bugs/improvements on here! We’re interested in learning from you how we can make this tutorial better.
+

@@ -37,7 +37,7 @@ data_code <- read_csv("fake_news_data_code.csv") %>%
 
 \bigskip
 
-# Paper Research Questions
+# Paper Research Questions (ORIGINAL)
 
 \bigskip
 
@@ -54,6 +54,24 @@ to share political fake news online (on purpose)?
   - RQ5. How does the perception of responsibility of 1) members of the public, 2)
 government, politicians and elected officials and 3) Facebook and Twitter, in trying to prevent fake news affect the probability to share them online?
 
+\bigskip
+
+# Paper Research Questions (ADJUSTED)
+
+\bigskip
+
+  - RQ1. How do demographics (age, gender, religion, education, political orientation and income), affect the probability to share political fake news online?
+  
+  - RQ2. What is the interaction between political orientation and gender?
+  
+  - RQ3. How does the perception of frequency of political fake news online affect the
+probability to share them?
+
+  - RQ4. How does previous online fake news sharing (unnoticed), affect the probability
+to share political fake news online (on purpose)?
+
+  - RQ5. How does the perception of responsibility of 1) members of the public, 2)
+government, politicians and elected officials and 3) Facebook and Twitter, in trying to prevent fake news affect the probability to share them online?
 
 \bigskip
 
@@ -251,17 +269,141 @@ reg_5 <- glm(shared_fake_news_19 ~ resp_population + resp_gov_politicians +
 ```{r, results = 'asis', message = FALSE, echo = FALSE}
 
 stargazer(reg_1, reg_2, reg_3, reg_4, reg_5,
-          title = "Likelihood of Sharing Fake News - Logit Models (basics + evang.)", 
+          title = "Likelihood of Sharing Fake News - Logit Models (Estimates)", 
           type = "latex", 
           digits = 3, 
           no.space = TRUE, 
           model.numbers = FALSE,
+          dep.var.labels = c("Shared FN"),
           column.labels = c("Model 1", "Model 2", "Model 3", "Model 4", "Model 5"),
+          covariate.labels = c("Resp. Pop", "Resp. Gov", "Resp. SM", "Unnoticed FN",
+                               "FN Freq", "Gender(male)", "Age", "Class AB", "Class C",
+                               "Politics (R)", "Politics (C)", "Politics (L)", "Educated",
+                               "Evangelical", "Gender(male)*Pol(R)", "Gender(male)*Pol(C)",
+                               "Gender(male)*Pol(L)"),
           header = FALSE,
           font.size = "small",
-          column.sep.width = "-15pt")
+          column.sep.width = "-15pt",
+          add.lines = list(c("Nagelkerke R$^2$", "0.021", "0.036", "0.247", "0.248","0.252"),
+                           c("Cox and Snell R$^2$", "0.013", "0.023", "0.159", "0.16", "0.162")))
 
 ```
+
+
+
+```{r}
+
+library(DescTools)
+library(mfx)
+
+reg_1_or <- logitor(shared_fake_news_19 ~ sex_men + age_full + class_ab + 
+               class_c + pol_orientation_right + pol_orientation_center +
+               pol_orientation_left + education_high + religion_Evangelicals,
+               data = data_fake_news)
+
+
+reg_2_or <- logitor(shared_fake_news_19 ~ frequency_fake_news + sex_men + age_full + class_ab + 
+               class_c + pol_orientation_right + pol_orientation_center +
+               pol_orientation_left + education_high + religion_Evangelicals,
+               data = data_fake_news)
+
+reg_3_or <- logitor(shared_fake_news_19 ~ unnoticed_share + frequency_fake_news + 
+               sex_men + age_full + class_ab + class_c + pol_orientation_right + 
+               pol_orientation_center + pol_orientation_left + education_high +
+               religion_Evangelicals,
+               data = data_fake_news)
+
+reg_4_or <- logitor(shared_fake_news_19 ~ resp_population + resp_gov_politicians + 
+               resp_social_media + unnoticed_share + frequency_fake_news + 
+               sex_men + age_full + class_ab + class_c + pol_orientation_right + 
+               pol_orientation_center + pol_orientation_left + education_high +
+               religion_Evangelicals,
+               data = data_fake_news)
+
+reg_5_or <- logitor(shared_fake_news_19 ~ resp_population + resp_gov_politicians + 
+               resp_social_media + unnoticed_share + frequency_fake_news + 
+               sex_men + age_full + class_ab + class_c + pol_orientation_right + 
+               pol_orientation_center + pol_orientation_left + education_high + 
+               sex_men*pol_orientation_right + sex_men*pol_orientation_center + 
+               sex_men*pol_orientation_left + religion_Evangelicals,
+               data = data_fake_news)
+
+```
+
+```{r, results = 'asis', message = FALSE, echo = FALSE}
+
+stargazer(reg_1_or, reg_2_or, reg_3_or, reg_4_or, reg_5_or,
+          title = "Likelihood of Sharing Fake News - Logit Models (Odds Ratio)", 
+          type = "latex", 
+          digits = 3, 
+          no.space = TRUE, 
+          model.numbers = FALSE,
+          dep.var.labels = c("Shared FN"),
+          column.labels = c("Model 1", "Model 2", "Model 3", "Model 4", "Model 5"),
+          covariate.labels = c("Resp. Pop", "Resp. Gov", "Resp. SM", "Unnoticed FN",
+                               "FN Freq", "Gender(male)", "Age", "Class AB", "Class C",
+                               "Politics (R)", "Politics (C)", "Politics (L)", "Educated",
+                               "Evangelical", "Gender(male)*Pol(R)", "Gender(male)*Pol(C)",
+                               "Gender(male)*Pol(L)"),
+          header = FALSE,
+          font.size = "small",
+          column.sep.width = "-15pt",
+          add.lines = list(c("Nagelkerke R$^2$", "0.021", "0.036", "0.247", "0.248","0.252"),
+                           c("Cox and Snell R$^2$", "0.013", "0.023", "0.159", "0.16", "0.162")))
+
+```
+
+```{r, eval = FALSE, echo = FALSE}
+
+cox_snell_R2 <- as.tibble(t(c("reg_1", "reg_2", "reg_3", "reg_4", "reg_5"))) 
+colnames(cox_snell_R2) <- cox_snell_R2[1,]
+
+cox_snell_R2[[1]] <- round(PseudoR2(reg_1, which = "CoxSnell")[[1]],3)
+cox_snell_R2[[2]] <- round(PseudoR2(reg_2, which = "CoxSnell")[[1]],3)
+cox_snell_R2[[3]] <- round(PseudoR2(reg_3, which = "CoxSnell")[[1]],3)
+cox_snell_R2[[4]] <- round(PseudoR2(reg_4, which = "CoxSnell")[[1]],3)
+cox_snell_R2[[5]] <- round(PseudoR2(reg_5, which = "CoxSnell")[[1]],3)
+
+cox_snell_R2
+
+```
+
+```{r, eval = FALSE, echo = FALSE}
+
+nagelkerke_R2 <- as.tibble(t(c("reg_1", "reg_2", "reg_3", "reg_4", "reg_5"))) 
+colnames(nagelkerke_R2) <- nagelkerke_R2[1,]
+
+nagelkerke_R2[[1]] <- round(PseudoR2(reg_1, which = "Nagelkerke")[[1]],3)
+nagelkerke_R2[[2]] <- round(PseudoR2(reg_2, which = "Nagelkerke")[[1]],3)
+nagelkerke_R2[[3]] <- round(PseudoR2(reg_3, which = "Nagelkerke")[[1]],3)
+nagelkerke_R2[[4]] <- round(PseudoR2(reg_4, which = "Nagelkerke")[[1]],3)
+nagelkerke_R2[[5]] <- round(PseudoR2(reg_5, which = "Nagelkerke")[[1]],3)
+
+nagelkerke_R2
+
+```
+
+
+```{r, eval = FALSE, echo = FALSE}
+
+generate_pseudo_r2 <- function(x){
+  NagelkerkeR2(x)[[2]]
+}
+
+generate_pseudo_r2(regressions[5])
+
+output <- vector("double", 5) # output 
+
+for (i in seq_along(regressions)) { # sequence
+  output[[i]] <- generate_pseudo_r2(regressions[[i]]) # body 
+}
+
+regressions[[1]]
+
+seq_along(regressions)
+
+```
+
 
 \newpage
 
