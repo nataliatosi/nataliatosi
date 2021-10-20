@@ -1,0 +1,54 @@
+---
+title: "Cleaning_IDEIA"
+author: "Natalia Tosi"
+date: "10/20/2021"
+output: pdf_document
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(googlesheets4)
+library(lubridate)
+
+rm(list = ls(all = TRUE))
+```
+
+
+## 1. Cleaning Brazil Data
+
+```{r}
+#Importing raw data
+
+# d <- read_csv("DATA/Popularity-LatinAmerica-BR.csv")
+d <- read_sheet("https://docs.google.com/spreadsheets/d/1ryF9r-kQdu3QRbRynJuI6xH0KofkHb6cZlWrngZiHzU/edit?usp=sharing")
+
+dd <- subset(d, President != "Figueiredo")
+
+#Get rid of spaces in pollster names 
+d$Institute <- gsub("\\s","\\.", d$Institute, perl = T)
+
+#Use short presidential names, and rder factors cronologically
+d$PresidentS <- factor(toupper(d$President),levels = c("FIGUEIREDO","SARNEY",
+                                                       "COLLOR", "FRANCO", "CARDOSO",
+                                                       "LULA", "DILMA", "TEMER", 
+                                                       "BOLSONARO"))
+
+#Check for missing data in relevant vars
+tmp <- apply(is.na(subset(d, select = c(Date,President,PresidentS,Positive,Institute))),
+             2,sum)
+if(sum(tmp) > 0){cat("Attention! Data missing in source\n"); print(tmp)}
+
+d$Date <- as_date(d$Date)
+
+# Save table
+save(d, file = "R/popularity_raw_BR.RData")
+write.csv(d, 'DATA/popularity_raw_BR.csv')
+
+#fork: save Bolsonaro's popularity separately 
+dd <- subset(d, President == "Bolsonaro" & year >= 2019)
+save(dd,file="R/popularity_raw_bolsonaro_BR.RData") 
+write.csv(dd,'DATA/popularity_raw_bolsonaro_BR.csv')
+
+```

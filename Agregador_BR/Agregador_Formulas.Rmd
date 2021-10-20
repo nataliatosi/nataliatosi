@@ -23,7 +23,9 @@ rm(list = ls(all = TRUE))
 # 1. Functions
 
 ```{r}
-source("R/Extract.r") #load stimsons "extract" function (downloaded from internet)
+#source("R/Extract.r") #load stimsons "extract" function (downloaded from internet)
+source("https://raw.githubusercontent.com/nataliatosi/nataliatosi/main/Agregador_BR/R/Extract.r")
+
 observations <- wcalcdiagnosticsQ <-  wcalcdiagnosticsM <- list()
 ```
 
@@ -34,8 +36,7 @@ observations <- wcalcdiagnosticsQ <-  wcalcdiagnosticsM <- list()
 
 my.drop <- function(xx){
   xx$drop.wcalcM <- xx$drop.wcalcQ <-  F  #indicator for whether to drop
-
-#Drop months after last obs and prior to first obs
+  #Drop months after last obs and prior to first obs
   for (i in levels(xx$PresidentS)){
     firstmonth <- min(which(xx$PresidentS==i))
     firstpop <- min(which(is.na(xx$Positive)==F&xx$PresidentS==i))
@@ -65,6 +66,7 @@ my.drop <- function(xx){
   print(quarters.do.drop)
   return(xx)
 }
+
 ```
 
 ## 1.2. Functions for aggregating monthly data
@@ -83,15 +85,14 @@ my.averageM <- function(x,drop.series=NULL){
   return(out)
 }
 
-popM <- function(d){#simple aggregation 
+popM <- function(d){#simple aggreagation 
   ifelse(is.nan(mean(d$Positive,na.rm=T)),NA,mean(d$Positive,na.rm=T))}
 popM <- function(x){#for when there is more than one president in the same term
   if(length(unique(x$PresidentS))==1){
     ifelse(is.nan(mean(x$Positive,na.rm=T)),NA,mean(x$Positive,na.rm=T))
   }else{#if more than one president, use incoming
     to.keep <- which(x$PresidentS==x$PresidentS[nrow(x)])	
-    ifelse(is.nan(mean(x$Positive[to.keep],na.rm=T)),NA,mean(x$Positive[to.keep],
-                                                             na.rm=T))
+    ifelse(is.nan(mean(x$Positive[to.keep],na.rm=T)),NA,mean(x$Positive[to.keep],na.rm=T))
   }}
 
 presUsed <- function(d){if(length(unique(d$PresidentS))==1){#use incoming president
@@ -120,6 +121,7 @@ my.averageQ <- function(x,drop.series=NULL){
   names(out)<-gsub("M","Q",names(out))
   return(out)
 }	
+
 ```
 
 
@@ -137,12 +139,10 @@ Qs <- gsub("-01|-02|-03","-1"
                  ,gsub("-07|-08|-09","-3"
                        ,gsub("-10|-11|-12","-4",Ms))))
 MQ <- data.frame(M=Ms,Q=Qs)
-```
 
-## 2.2. Define a month
+#define a month
+m1 <- 365/12	
 
-```{r}
-m1 <- 365/12
 ```
 
 
@@ -151,8 +151,14 @@ m1 <- 365/12
 ```{r}
 #load("R/popularity_raw_BR.RData")
 
-d <- read_sheet("https://docs.google.com/spreadsheets/d/1c9TIhlOhUUpRCDKeVv7mMzGNuM7YpyJ_2ffmv-bhHrE/edit?usp=sharing")
+#d <- read_sheet("https://docs.google.com/spreadsheets/d/1c9TIhlOhUUpRCDKeVv7mMzGNuM7YpyJ_2ffmv-bhHrE/edit?usp=sharing")
 
+d <- read_csv(url("https://raw.githubusercontent.com/nataliatosi/nataliatosi/main/Agregador_BR/DATA/popularity_raw_BR.csv"))
+
+```
+
+
+```{r}
 ### The simple averaging approach ##################		
 ms <- my.averageM(d)  #by month
 qs <- my.averageQ(d)  #by quarter
@@ -163,10 +169,10 @@ qs <- my.averageQ(d)  #by quarter
 #this should not affect monthly latent estimates
 #but definitely affects quarterly
 
-d <- merge(d,subset(ms,select=c(M,presUsed)),by="M",all.x=T) 
-d$useM <- d$PresidentS==d$presUsed
+d <- merge(d, subset(ms, select = c(M,presUsed)), by = "M", all.x = T) 
+d$useM <- d$PresidentS == d$presUsed
 
-d$Varname <-  gsub("\\s","",d$Institute)
+d$Varname <-  gsub("\\s","", d$Institute)
 d$Date <- d$date
 d$Index <- d$Positive
 
@@ -174,7 +180,7 @@ d$Index <- d$Positive
 
 
 ```{r}
-ds <- subset(d,select=c(Varname,Date,Index,PresidentS,Q,M,useM))
+ds <- subset(d, select = c(Varname,Date,Index,PresidentS,Q,M,useM))
 
 cat("Observation by pollster in dataset\n")
 print(table(ds$Varname))
@@ -183,12 +189,16 @@ print(table(ds$Varname))
 ## 3.1. WCALC Monthly
 
 ```{r}
-useM <- which(ds$useM==T)
-wcalc.Mraw <- extract(varname=ds$Varname[useM]
-                      ,date=ds$Date[useM]
-                      ,index=ds$Index[useM]
-                      ,ncases=NULL,
-                      unit="M") 
+useM <- which(ds$useM == T)
+
+#wcalc.Mraw <- extract(varname = ds$Varname[useM], date = ds$Date[useM], index = ds$Index[useM], unit = "M")  
+
+wcalc.Mraw <- extract(varname = ds$Varname[useM],
+                      date = ds$Date[useM],
+                      index = ds$Index[useM],
+                      unit = "M")  
+
+
 wcalcdiagnosticsM[["brazil"]] <- summary(wcalc.Mraw) 
 wcalc.M <- data.frame(M=gsub("\\.","-",wcalc.Mraw$period,perl=T)
                       ,latentM=wcalc.Mraw$latent1)
@@ -239,8 +249,8 @@ concluded.pres <- levels(dm$PresidentS)[-c(3,7)]
 allpres <- levels(dm$PresidentS)
 dm$popM.li <- NA
 for(pp in allpres){
-  l <- min(which(is.na(dm$popM)==F&dm$PresidentS==pp))
-  h<- max(which(is.na(dm$popM)==F&dm$PresidentS==pp))
+  l <- min(which(is.na(dm$popM) == F&dm$PresidentS==pp))
+  h <- max(which(is.na(dm$popM)==F&dm$PresidentS==pp))
   dm$popM.li[l:h] <- data.frame(dm$popM[l:h],
           approx(dm$popM[l:h],method = "linear", n = length(dm$popM[l:h])))$y
   
@@ -359,42 +369,90 @@ write.csv(pop.elec,'DATA/data_BR-elections.csv')
 ## 4.2. Plot
 
 ```{r}
-pdf(file="FIGURES/fig-popBR.pdf",width=8,height=6)
-par(mar=c(2.5,5.5,.5,.5))
-min.y<-0
-max.y<-100
-plot(d$date, d$Positive,type="n"
-     ,ylab="Approval or Popularity"
-     ,xlab="",bty="n",
-     cex.axis=1.2,cex.lab=1.2,ylim=c(min.y,max.y))
-polygon(x=c(min(d$date),pres.dates[1],pres.dates[1],min(d$date)),
-        y=c(min.y,min.y,max.y,max.y),border=NA,col=gray(0.9))
-for(i in seq(2,length(pres.dates),by=2)){
-  polygon(x=c(pres.dates[i],pres.dates[i+1],pres.dates[i+1],pres.dates[i]),
-          y=c(min.y,min.y,max.y,max.y),border=NA,col=gray(0.9))	}
+par(mar = c(2.5,5.5,.5,.5))
+min.y <- 0
+max.y <- 100
+plot(d$date, d$Positive,type="n",
+     ylab="Approval or Popularity",
+     xlab="", bty="n",
+     cex.axis = 1.2, cex.lab = 1.2, ylim = c(min.y,max.y))
 
-points(d$date,d$popM,pch=".",cex=2)
+polygon(x = c(min(d$date), pres.dates[1], pres.dates[1], min(d$date)),
+        y = c(min.y, min.y, max.y, max.y), border = NA, col = gray(0.9))
+
+for(i in seq(2, length(pres.dates), by = 2)){
+  polygon(x = c(pres.dates[i], pres.dates[i+1], pres.dates[i+1], pres.dates[i]),
+          y = c(min.y, min.y, max.y, max.y), border = NA, col=gray(0.9))	
+  }
+
+points(d$date, d$popM, pch = ".", cex = 2)
 alt <- -1
 for(i in levels(d$PresidentS)){
-  text(mean(d$date[d$PresidentS==i],na.rm=T),max.y-2,labels=i,cex=0.6,pos=2+alt)
-  lines(d$date[which(d$PresidentS==i)],d$latentM[which(d$PresidentS==i)],col=gray(0))
-  lines(d$date[which(d$PresidentS==i)],d$popM.li[which(d$PresidentS==i)],col=1,lty=3)
+  text(mean(d$date[d$PresidentS==i], na.rm=T), max.y-2, labels=i, cex=0.6, pos=2+alt)
+  lines(d$date[which(d$PresidentS==i)], d$latentM[which(d$PresidentS==i)], col=gray(0))
+  lines(d$date[which(d$PresidentS==i)], d$popM.li[which(d$PresidentS==i)], col=1, lty=3)
   alt <- alt * -1 #to alternate position of name
 }
-legend(x="bottomright"
-       ,legend=c("Raw Data Point","Average (Monthly)","Latent Estimate (Monthly)",
-                 "Latent Estimate (Quarterly)")
-       ,cex=0.8
-       ,lty=c(NA,3,1,1)
-       ,col=c(1,gray(0),gray(0),gray(.5))
-       ,pch=c(".",NA,NA,NA),pt.cex=4,bty="n")
-#abline(h=33,lty=2)
-abline(v=c(as.Date("1994-10-01"),
+legend(x = as.Date("2002-01-01"), y = 20,
+       legend = c("Raw Data Point","Average (Monthly)","Latent Estimate (Monthly)",
+                 "Latent Estimate (Quarterly)"),
+       cex = 0.8,
+       lty = c(NA,3,1,1),
+       col = c(1, gray(0), gray(0), gray(.5)),
+       pch = c(".",NA,NA,NA), pt.cex = 4, bty = "n")
+
+#abline(h = 33,lty = 2)
+abline(v = c(as.Date("1994-10-01"),
            as.Date("1998-10-01"),
            as.Date("2002-10-01"),
            as.Date("2006-10-01"),
            as.Date("2010-10-01"),
            as.Date("2014-10-01"),
            as.Date("2018-10-01")))
+```
+```{r, echo = FALSE}
+
+pdf(file = "FIGURES/fig-popBR.pdf", width = 8, height = 6)
+par(mar = c(2.5,5.5,.5,.5))
+min.y <- 0
+max.y <- 100
+plot(d$date, d$Positive,type="n",
+     ylab="Approval or Popularity",
+     xlab="", bty="n",
+     cex.axis = 1.2, cex.lab = 1.2, ylim = c(min.y,max.y))
+
+polygon(x = c(min(d$date), pres.dates[1], pres.dates[1], min(d$date)),
+        y = c(min.y, min.y, max.y, max.y), border = NA, col = gray(0.9))
+
+for(i in seq(2, length(pres.dates), by = 2)){
+  polygon(x = c(pres.dates[i], pres.dates[i+1], pres.dates[i+1], pres.dates[i]),
+          y = c(min.y, min.y, max.y, max.y), border = NA, col=gray(0.9))	
+  }
+
+points(d$date, d$popM, pch = ".", cex = 2)
+alt <- -1
+for(i in levels(d$PresidentS)){
+  text(mean(d$date[d$PresidentS==i], na.rm=T), max.y-2, labels=i, cex=0.6, pos=2+alt)
+  lines(d$date[which(d$PresidentS==i)], d$latentM[which(d$PresidentS==i)], col=gray(0))
+  lines(d$date[which(d$PresidentS==i)], d$popM.li[which(d$PresidentS==i)], col=1, lty=3)
+  alt <- alt * -1 #to alternate position of name
+}
+legend(x = as.Date("2002-01-01"), y = 20,
+       legend = c("Raw Data Point","Average (Monthly)","Latent Estimate (Monthly)",
+                 "Latent Estimate (Quarterly)"),
+       cex = 0.8,
+       lty = c(NA,3,1,1),
+       col = c(1, gray(0), gray(0), gray(.5)),
+       pch = c(".",NA,NA,NA), pt.cex = 4, bty = "n")
+
+#abline(h = 33,lty = 2)
+abline(v = c(as.Date("1994-10-01"),
+           as.Date("1998-10-01"),
+           as.Date("2002-10-01"),
+           as.Date("2006-10-01"),
+           as.Date("2010-10-01"),
+           as.Date("2014-10-01"),
+           as.Date("2018-10-01")))
+
 ```
 

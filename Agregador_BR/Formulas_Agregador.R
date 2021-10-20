@@ -1,0 +1,425 @@
+
+### Formulas Cleaning
+
+# Function to identify months that used data from more than one president
+
+my.drop <- function(xx){
+  xx$drop.wcalcM <- xx$drop.wcalcQ <-  F  #indicator for whether to drop
+  #Drop months after last obs and prior to first obs
+  for (i in levels(xx$PresidentS)){
+    firstmonth <- min(which(xx$PresidentS == i))
+    firstpop <- min(which(is.na(xx$Positive) == F & xx$PresidentS == i))
+    lastmonth <- max(which(xx$PresidentS == i))
+    lastpop <- max(which(is.na(xx$Positive) == F & xx$PresidentS == i))
+    if(firstmonth < firstpop){xx$drop.wcalcM[firstmonth:(firstpop-1)] <- T}
+    if(lastpop < lastmonth){xx$drop.wcalcM[(lastpop+1):lastmonth] <- T}
+  }
+  months.to.drop <- xx$M[xx$drop.wcalcM] #this is final
+  #For quarters, drop after last obs, prior to first obs and
+  #those with two presidents
+  Qpost <- unique(xx$Q[xx$drop.wcalcM]) #refine this later
+  tmp <- daply(xx,.(Q),function(x){sum(is.na(x$Positive))})
+  QNA <- names(tmp[tmp == 3]) #quarters with no data
+  tmp <- daply(xx,.(Q),function(x){
+    length(unique(x$PresidentS[is.na(x$Positive) == F]))
+    })
+  Q2P <- names(tmp[tmp == 2]) #quarters With DATA from two presidents
+  quarters.do.drop <- union(intersect(Qpost,QNA),Q2P)
+  #out <- list(M=months.to.drop,Q=quarters.do.drop)
+  xx$drop.wcalcQ[is.element(xx$Q, quarters.do.drop)] <- T
+  ## The line below might seem strange, but it doesn't make sense to keep 
+  ## monthly observations of Q for months that have been dropped
+  ## this is specially a problem for transition between presidents
+  xx$drop.wcalcQ[is.element(xx$M, months.to.drop)] <- T
+  cat('Should drop WCALC estimates for the following months:\n')
+  print(months.to.drop)
+  cat('and quarters:\n')
+  print(quarters.do.drop)
+  return(xx)
+}
+
+# Functions for aggregating monthly data
+
+obsM <- function(d){nrow(d)}
+institutesM <- function(d){length(unique(d$Institute))}
+instituteM <- function(d){if(length(unique(d$Institute)) == 1){
+  as.character(d$Institute[1])}else{"_Multiple"}}
+
+my.averageM <- function(x, drop.series = NULL){
+  if(is.null(drop.series) == F){	x <- subset(x, Institute != drop.series)}
+  tmp <- ddply(x, "M", c("popM","obsM","institutesM"))
+  tmp2 <- ddply(x, "M", c("instituteM","presUsed"))
+  out <- merge(tmp, tmp2, by = "M", all = T)
+  return(out)
+}
+
+popM <- function(d){ #simple aggreagation 
+  ifelse(is.nan(mean(d$Positive, na.rm = T)), NA, mean(d$Positive, na.rm = T))}
+popM <- function(x){#for when there is more than one president in the same term
+  if(length(unique(x$PresidentS)) == 1){
+    ifelse(is.nan(mean(x$Positive, na.rm = T)), NA, mean(x$Positive, na.rm = T))
+  } else{#if more than one president, use incoming
+    to.keep <- which(x$PresidentS == x$PresidentS[nrow(x)])	
+    ifelse(is.nan(mean(x$Positive[to.keep], na.rm = T)), NA, 
+           mean(x$Positive[to.keep], na.rm = T))
+  }}
+
+presUsed <- function(d){
+  if(length(unique(d$PresidentS)) == 1){#use incoming president
+  as.character(d$PresidentS[1])}
+  else{as.character(d$PresidentS[nrow(d)])}}
+
+dateUsed <- function(d){ #if no observation, use start of quarter,
+  if(is.na(max(d$Date))){
+    out <- gsub("-1","-02-15",d$Q)
+    out <- gsub("-2","-05-15",out)	
+    out <- gsub("-3","-08-15",out)
+    out <- gsub("-4","-11-15",out)
+  }else{
+    out <- max(d$Date)
+  }
+  return(out)}
+
+dateUsed <- function(d){max(d$Date)}
+
+my.averageQ <- function(x, drop.series = NULL){
+  if(is.null(drop.series) == F){	x <- subset(x, Institute != drop.series)}
+  tmp <- ddply(x, "Q", c("popM",
+                         "obsM","institutesM"))
+  tmp2 <- ddply(x, "Q", c("instituteM","presUsed"))
+  tmp3 <- ddply(x, "Q", c("dateUsed"))
+  out <- merge(merge(tmp, tmp2, by = "Q", all = T), tmp3, by = "Q", all = T)
+  names(out)<-gsub("M", "Q", names(out))
+  return(out)
+}	
+
+
+### Formulas Cleaning
+
+display <- function(out, filename = NULL) {
+  if (is.null(filename)) filename = ""
+  d<-out$dimensions
+  p<-out$period
+  m<-out$latent1
+  if (d == 2) m2 <- out$latent2     
+  T <- out$T
+  mo = 100*(p-as.integer(p))
+  for (t in 1:T) {
+    yr <- format(as.integer(p[t]), nsmall = 0)
+    month <- format(mo[t], digits = 2)
+    lat1 <- format(m[t], nsmall = 3)
+    if (d == 1) {
+      cat(c(yr,month,lat1), fill = TRUE, file = filename, append = TRUE)
+    } else {
+      lat2 <- format(m2[t], nsmall = 3)
+      cat(c(yr,month,lat1,lat2), fill = TRUE, file = filename, append = TRUE)
+    }
+  }
+}
+
+
+############################################################
+
+plot.Zextract <- function(outobject) {
+  dim <- outobject$dimensions
+  T <- outobject$T
+  vect1 <- outobject$latent1
+  t <-seq(1:T)
+  if (dim > 1) {
+    vect2 <- outobject$latent2
+    miny <- min(vect1)
+    if (miny > min(vect2)) miny <- min(vect2)
+    maxy <- max(vect1)
+    if (maxy < max(vect2)) maxy <- max(vect2)
+    dummy <- rep(miny,T-1) #dummy is a fake variable used to reset axes to handle min/max of both series
+    dummy[T] <- maxy
+    leg.text <- c("","Dimension 1","Dimension 2")
+    plot(t,dummy,type = "l", lty = 0, main = "Final Estimation Results: Two Dimensions",
+         xlab = "Time Point", ylab = "Latent Variables")
+    lines(t, vect1, col = 1)
+    lines(t, vect2, col = 2)
+    legend(1, maxy, leg.text, col = c(0,1,2), lty = c(0,1,1))
+  } else {
+    plot(t,vect1,type = "l", main = "Final Estimation Results", xlab = "Time Point",
+         ylab = "Latent Variable")
+    if (dim == 2) lines(t,vect2,col = 2)
+  }
+}
+
+##########################################################################################
+
+summary.Zextract <- function(outobject) {
+  T = outobject$T
+  nvar = outobject$nvar
+  dim <- outobject$dimensions
+  vn <- c(outobject$varname,"Variable Name")
+  vn <- format(vn,justify = "right")
+  nc <- format(outobject$N,justify = "right")
+  ld <- format(outobject$loadings1, digits = 3, justify = "right")
+  mean <- format(outobject$means, digits = 6, justify = "right")
+  sd <- format(outobject$std.deviations, digits = 6, justify = "right")
+  cat("Variable Loadings and Descriptive Information: Dimension 1\n")
+  cat(paste(vn[nvar+1],"Cases","Loading","   Mean ","Std Dev","\n"))
+  for (v in 1:nvar) {
+    cat(paste(vn[v],"  ",nc[v]," ",ld[v],mean[v],sd[v],"\n"))
+  }
+  if (dim == 2) {
+    ld <- format(outobject$loadings2, digits = 3, justify = "right")
+    cat("\nVariable Loadings and Descriptive Information: Dimension 2\n")
+    cat(paste(vn[nvar+1],"Cases","Loading","   Mean ","Std Dev","\n"))
+    for (v in 1:nvar) {
+      cat(paste(vn[v],"  ",nc[v]," ",ld[v],mean[v],sd[v],"\n"))
+    }
+  }
+}
+
+##########################################################################################
+
+findper <- function(unit, curdate, mind, miny, minper, aggratio) { #returns intFindPer
+  datcurdate <- curdate
+  class(datcurdate) <- "Date"
+  mo <- findmonth(datcurdate)
+  qu <- 1 + as.integer((mo - 1)/3)
+  dy <- findday(datcurdate)
+  yr <- findyear(datcurdate)
+  arinv<- 1/aggratio
+  if (unit == "D") intFindPer <- curdate - mind + 1 #curdate - mindate + 1
+  if (unit == "A" || unit == "O") intFindPer <- as.integer((yr - miny) /aggratio) + 1
+  if (unit == "Q") part <- qu
+  if (unit == "M") part <- mo
+  if (unit == "Q" || unit == "M") intFindPer <- (yr - miny - 1) * arinv + part + 
+    (arinv - (minper - 1))
+  return(intFindPer)
+} #findper
+
+##########################################################################################
+
+findday <- function(DateVar) {
+  z <- as.POSIXlt(DateVar)
+  v <- unlist(z)
+  findday <- as.integer(v[4])
+} #end findday
+
+##########################################################################################
+
+findmonth <- function(DateVar) {
+  z <- as.POSIXlt(DateVar)
+  v <- unlist(z)
+  findmonth <- as.integer(v[5]) + 1
+} #end findmonth
+
+##########################################################################################
+
+findyear <- function(DateVar) {
+  z <- as.POSIXlt(DateVar)
+  v <- unlist(z)
+  findyear <- as.integer(v[6]) + 1900
+} #end findyear
+
+
+##########################################################################################
+aggregate <- function(varname, date, index, ncases, mindate, maxdate, nperiods,
+                      nvar, aggratio, unit, miny, minper) {   #
+  #READ A NEW RECORD, CALCULATE PERIOD, AND SET UP AGGREGATION INTO MAT.ISSUE[NPERIODS,NVAR] 
+  vl <- character(nvar)
+  mind <- as.integer(mindate)/86400
+  maxd <- as.integer(maxdate)/86400
+  vfac <- factor(varname) #make a factor vector
+  vlev <- levels(vfac)    #find unique categories
+  Mat.Issue <- array(dim = c(nperiods,nvar))
+  
+  nrec <-length(varname) #added for R compatibility
+  lp <- 0
+  per <- 0
+  x <- 0
+  c <- 0
+  nkeep <- 0
+  lv <- "0"
+  for (record in 1:nrec) { # MASTER LOOP THROUGH INPUT DATA, 1 TO NREC
+    if (ncases[record] == 0 || is.na(ncases[record])) ncases[record] <- 1000
+    mo <- findmonth(date[record])
+    qu <- 1 + as.integer((mo - 1)/3)
+    dy <- findday(date[record])
+    yr <- findyear(date[record])
+    curdate<- as.integer(date[record])
+    if (curdate >= mind && curdate <= maxd) {  #is date within range?
+      nkeep <- nkeep + 1
+      if (nkeep == 1) { #startup routine for first good case
+        firstcase <- TRUE
+        lp <- findper(unit, curdate, mind, miny, minper, aggratio)
+        lv <- varname[record]
+        x <- index[record] * ncases[record] #start new sums for case 1
+        c <- ncases[record]
+        for (i in 1:nvar) {
+          if (lv == vlev[i]) v=i #determine v by matching to position of labels vector
+        } #end for
+      } else {
+        firstcase<- FALSE
+      } #end if
+      if (firstcase == FALSE) { #skip over the rest for first good case
+        per<- findper(unit, curdate, mind, miny, minper, aggratio) #here we translate date into agg category
+        if ((varname[record] !=  lv) || (per !=lp)) { #found a new period or variable name
+          if (lp > 0 &&  lp <= nperiods) {
+            Mat.Issue[lp, v] <- x / c #recompute for either period or var change
+            x<- 0
+            c<- 0
+          }
+          if (varname[record] !=  lv) { #new var only
+            for (i in 1:nvar) {
+              if (varname[record] == vlev[i]) v=i #determine v by matching to position of labels vector
+            } #end for
+            vl[v]<- varname[record] #this will only catch names that have good cases
+            lv<-vl[v]  #reassign new varname to lastvar
+          } # new var
+          lp <- findper(unit,curdate,mind,miny,minper,aggratio)
+          x <- index[record] * ncases[record] #start new sums for current case
+          c <- ncases[record]
+        } else {
+          x <- x + index[record] * ncases[record] #a continuing case, increment sums
+          c <- c + ncases[record]
+        }
+      } # end of first case special loop
+    } #end of date test loop
+  } #newrec: next record
+  vl <- vlev #overwrite previous assignment which had good names only
+  agglist <- list(lab = vl, iss = Mat.Issue)
+  return(agglist) #list includes labels and issue matrix
+} #end aggregate function
+
+##########################################################################################
+
+esmooth <- function(mood, fb, alpha){ 
+  ################
+  smooth <- function(alpha) { #for time series "series" and alpha "alpha[1]" compute sum of squared forecast error
+    ferror <- numeric(1)
+    T <- length(series)
+    xvect <- numeric(T)        
+    xvect[1] <-  series[1]
+    for (t in 2:T) { 
+      xvect[t] <-  alpha[1] * series[t] + (1 - alpha[1]) * xvect[t - 1]
+    }
+    sumsq <-  0
+    for (t in 3:T) { 
+      ferror <-  series[t] - xvect[t - 1]
+      sumsq <-  sumsq + ferror ^ 2
+    } 
+    return(sumsq) #this is the value of the function for a particular parameter alpha[1]
+  } # END OF FUNCTION SMOOTH   
+  ################
+  series <- mood[fb,] #create series to be smoothed
+  sm.out <- optim(c(.75), smooth, method = "L-BFGS-B", lower = 0.5, upper = 1)  #call smoother
+  alpha <- sm.out$par   #assign result to alpha
+  #NOW SMOOTH USING ALPHA
+  T <- length(series)
+  for (t in 2:T) { 
+    mood[fb,t] <-  alpha * series[t] + (1 - alpha) * mood[fb,t - 1]
+  }
+  return(alpha)
+} #END OF FUNCTION ESMOOTH
+
+
+##########################################################################################
+residmi <- function(issue, v, mood) { #function regresses issue(v) on mood and then residualizes it
+  o <- lm(issue[,v] ~ mood[3,]) #regress issue on mood to get a,b
+  issue[,v]<- 100 + issue[,v] - (o$coef[1] + o$coef[2] * mood[3,]) #100 + Y - (a+bx)
+  return(issue[,v])
+} 
+
+##########################################################################################
+iscorr <- function(issue,mood) { #compute issue-scale correlations
+  Nv <- length(issue[1,])
+  Np <- length(issue[,1])
+  Rvector <- numeric(Nv)
+  for (v in 1:Nv) {
+    N <- Np - sum(is.na(issue[,v]))
+    if (N > 1) Rvector[v]<- cor(issue[,v], mood[3,], use = "complete.obs", 
+                                method = "pearson")
+  }
+  return(Rvector)
+} #end function iscorr
+
+##########################################################################################
+dominate <- function(fb, issue, nperiods, nvar, mood, valid, smoothing, alpha) {
+  nitems <- numeric(nperiods)
+  if (fb == 2) alpha1 <- alpha
+  if (fb == 1) {
+    unexp <- numeric(1)
+    everlap <- integer(1)
+    alpha <- 1
+    alpha1 <- 1
+  } 
+  
+  if (fb == 1) {
+    startper <- 1
+    mood[fb, startper] <- 100
+    firstj <- 2
+    lastj <- nperiods
+    stepj <- 1
+    jprev <- 1
+  } else {
+    startper <- nperiods
+    mood[fb, startper] <- mood[1, nperiods] #reuse forward metric
+    firstj <- nperiods - 1
+    lastj <- 1
+    stepj <- -1
+    jprev <- nperiods
+  } #    end if
+  for (j in seq(firstj,lastj,by=stepj)) {  
+    mood[fb, j] <- 0
+    everlap <- 0 ## of years which have contributed sums to mood
+    if (fb == 1) {
+      firstj2 <- 1
+      lastj2 <- j - 1
+    } else  {
+      firstj2 <- j + 1
+      lastj2 <- nperiods
+    } # end if
+    
+    for (j2 in firstj2:lastj2) { 
+      sum <- 0     #has already been estimated
+      consum <- 0  #sum of communalities across issues
+      overlap <- 0
+      for (v in 1:nvar) { 
+        xj <- issue[j, v]                      #xj is base year value
+        sngx2 <- issue[j2, v]                  #sngx2 is comparison year value
+        if (!is.na(xj) && !is.na(sngx2)) {  
+          overlap <- overlap + 1               #numb of issues contributing to sum
+          ratio <- xj / sngx2
+          if (csign[v] < 0)  ratio <- 1 / ratio
+          sum <- sum + valid[v] * ratio * mood[fb, j2] 
+          consum <- consum + valid[v]
+        } #              end if
+      } #next v
+      if (overlap > 0) {
+        everlap <- everlap + 1
+        mood[fb, j] <- mood[fb, j] + sum / consum
+      } # end if
+    } #next j2
+    nitems[j] <- everlap
+    if (everlap > 0) mood[fb, j] <- mood[fb, j] / everlap else mood[fb, j] <- mood[fb, jprev] #if undefined, set to lag(mood)
+    jprev <- j #last value of j, whether lead or lag
+  } #next j
+  if (smoothing == TRUE) {
+    alpha<- esmooth(mood, fb, alpha)     #NOW SMOOTH USING ALPHA
+    mood.sm<- mood[fb,] #set up alternate vector mood.sm
+    for (t in 2:nperiods) { 
+      mood.sm[t]<- alpha*mood[fb,t]+(1-alpha)*mood.sm[t-1]
+    } #end for
+    mood[fb,]<- mood.sm #now assign back smoothed version
+  } else {
+    alpha1 <- 1
+    alpha <- 1
+  } 
+  if (smoothing == TRUE && fb == 1) alpha1 <- alpha
+  dominate.out <- list(alpha1 = alpha1, alpha = alpha, latent = mood[fb,]) #output object
+  return(dominate.out)  
+  #  return(mood[fb,])
+} #end dominate algorithm  
+##########################################################################################
+
+#begindt<-NA #ISOdate(2004,6,1)
+#enddt<-NA #ISOdate(2004,10,31)
+
+
+
+

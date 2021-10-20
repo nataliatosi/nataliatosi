@@ -122,6 +122,7 @@ m1 <- 365/12
 #BRAZIL		#################################
 #Implementing a pull from Googlesheets (Didn't work - manual import)
 d <- read_csv("DATA/Popularity-LatinAmerica-BR.csv")
+# d <- read_sheet("https://docs.google.com/spreadsheets/d/1c9TIhlOhUUpRCDKeVv7mMzGNuM7YpyJ_2ffmv-bhHrE/edit?usp=sharing")
 
 #Or read from saved as windows csv, so read with latin1. If saving as (mac) csv, read with macroman
 #d<-read.csv(paste("./DATA/_popularity_BR_25mar21.csv",sep=""),
@@ -167,7 +168,11 @@ save(dd,file="R/popularity_raw_bolsonaro_BR.RData")
 ### In Brazil, each pollsters is a single series
 ###########################################################################
 
-load("R/popularity_raw_BR.RData")
+
+# load("R/popularity_raw_BR.RData")
+d <- read_csv(url("https://raw.githubusercontent.com/nataliatosi/nataliatosi/main/Agregador_BR/DATA/popularity_raw_BR.csv"))
+
+
 ### The simple averaging approach ##################		
 ms <- my.averageM(d)  #by month
 qs <- my.averageQ(d)  #by quarter
@@ -186,7 +191,7 @@ ds$Institute <- gsub("IPEC-ExIBOPE","IBOPE",
 ds$Varname <-  gsub("\\s","",ds$Institute)
 ds$Date <- ds$date
 ds$Index <- ds$Positive
-ds <- subset(ds,select=c(Varname,Date,Index,PresidentS,Q,M,useM,useQ))
+ds <- subset(ds,select=c(Varname,Date,Index,PresidentS,Q,M,useM))
 
 cat("Observation by pollster in dataset\n")
 print(table(ds$Varname))
@@ -198,6 +203,7 @@ wcalc.Mraw <- extract(varname=ds$Varname[useM]
                       ,index=ds$Index[useM]
                       ,ncases=NULL,
                       unit="M") 
+
 wcalcdiagnosticsM[["brazil"]] <- summary(wcalc.Mraw) 
 wcalc.M <- data.frame(M=gsub("\\.","-",wcalc.Mraw$period,perl=T)
                       ,latentM=wcalc.Mraw$latent1)
@@ -354,39 +360,44 @@ write.csv(pop.elec,'DATA/data_BR-elections.csv')
 
 #Produce a plot ##########################				
 pdf(file="FIGURES/fig-popBR.pdf",width=8,height=6)
-par(mar=c(2.5,5.5,.5,.5))
-min.y<-0
-max.y<-100
-plot(d$date, d$Positive,type="n"
-     ,ylab="Approval or Popularity"
-     ,xlab="",bty="n",
-     cex.axis=1.2,cex.lab=1.2,ylim=c(min.y,max.y))
-polygon(x=c(min(d$date),pres.dates[1],pres.dates[1],min(d$date)),
-        y=c(min.y,min.y,max.y,max.y),border=NA,col=gray(0.9))
-for(i in seq(2,length(pres.dates),by=2)){
-  polygon(x=c(pres.dates[i],pres.dates[i+1],pres.dates[i+1],pres.dates[i]),
-          y=c(min.y,min.y,max.y,max.y),border=NA,col=gray(0.9))	}
+par(mar = c(2.5,5.5,.5,.5))
+min.y <- 0
+max.y <- 100
+plot(d$date, d$Positive,type="n",
+     ylab="Approval or Popularity",
+     xlab="", bty="n",
+     cex.axis = 1.2, cex.lab = 1.2, ylim = c(min.y,max.y))
 
-points(d$date,d$popM,pch=".",cex=2)
+polygon(x = c(min(d$date), pres.dates[1], pres.dates[1], min(d$date)),
+        y = c(min.y, min.y, max.y, max.y), border = NA, col = gray(0.9))
+
+for(i in seq(2, length(pres.dates), by = 2)){
+  polygon(x = c(pres.dates[i], pres.dates[i+1], pres.dates[i+1], pres.dates[i]),
+          y = c(min.y, min.y, max.y, max.y), border = NA, col=gray(0.9))	
+}
+
+points(d$date, d$popM, pch = ".", cex = 2)
 alt <- -1
 for(i in levels(d$PresidentS)){
-  text(mean(d$date[d$PresidentS==i],na.rm=T),max.y-2,labels=i,cex=0.6,pos=2+alt)
-  lines(d$date[which(d$PresidentS==i)],d$latentM[which(d$PresidentS==i)],col=gray(0))
-  lines(d$date[which(d$PresidentS==i)],d$popM.li[which(d$PresidentS==i)],col=1,lty=3)
+  text(mean(d$date[d$PresidentS==i], na.rm=T), max.y-2, labels=i, cex=0.6, pos=2+alt)
+  lines(d$date[which(d$PresidentS==i)], d$latentM[which(d$PresidentS==i)], col=gray(0))
+  lines(d$date[which(d$PresidentS==i)], d$popM.li[which(d$PresidentS==i)], col=1, lty=3)
   alt <- alt * -1 #to alternate position of name
 }
-legend(x="bottomright"
-       ,legend=c("Raw Data Point","Average (Monthly)","Latent Estimate (Monthly)","Latent Estimate (Quarterly)")
-       ,cex=0.8
-       ,lty=c(NA,3,1,1)
-       ,col=c(1,gray(0),gray(0),gray(.5))
-       ,pch=c(".",NA,NA,NA),pt.cex=4,bty="n")
-#abline(h=33,lty=2)
-abline(v=c(as.Date("1994-10-01"),
-           as.Date("1998-10-01"),
-           as.Date("2002-10-01"),
-           as.Date("2006-10-01"),
-           as.Date("2010-10-01"),
-           as.Date("2014-10-01"),
-           as.Date("2018-10-01")))
+legend(x = as.Date("2002-01-01"), y = 20,
+       legend = c("Raw Data Point","Average (Monthly)","Latent Estimate (Monthly)",
+                  "Latent Estimate (Quarterly)"),
+       cex = 0.8,
+       lty = c(NA,3,1,1),
+       col = c(1, gray(0), gray(0), gray(.5)),
+       pch = c(".",NA,NA,NA), pt.cex = 4, bty = "n")
+
+#abline(h = 33,lty = 2)
+abline(v = c(as.Date("1994-10-01"),
+             as.Date("1998-10-01"),
+             as.Date("2002-10-01"),
+             as.Date("2006-10-01"),
+             as.Date("2010-10-01"),
+             as.Date("2014-10-01"),
+             as.Date("2018-10-01")))
 dev.off()
