@@ -151,9 +151,7 @@ m1 <- 365/12
 ```{r}
 #load("R/popularity_raw_BR.RData")
 
-#d <- read_sheet("https://docs.google.com/spreadsheets/d/1c9TIhlOhUUpRCDKeVv7mMzGNuM7YpyJ_2ffmv-bhHrE/edit?usp=sharing")
-
-d <- read_csv(url("https://raw.githubusercontent.com/nataliatosi/nataliatosi/main/Agregador_BR/DATA/popularity_raw_BR.csv"))
+d <- read_sheet("https://docs.google.com/spreadsheets/d/1ryF9r-kQdu3QRbRynJuI6xH0KofkHb6cZlWrngZiHzU/edit#gid=1590997736")
 
 ```
 

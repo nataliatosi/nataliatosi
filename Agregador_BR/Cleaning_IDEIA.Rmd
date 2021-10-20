@@ -8,9 +8,15 @@ output: pdf_document
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
-library(tidyverse)
+library(car)
+library(xtable)
+library(Hmisc) # for Lag command
+library(reshape)
+library(plyr)
 library(googlesheets4)
+library(tidyverse)
 library(lubridate)
+library(kableExtra)
 
 rm(list = ls(all = TRUE))
 ```
@@ -20,7 +26,6 @@ rm(list = ls(all = TRUE))
 
 ```{r}
 #Importing raw data
-
 # d <- read_csv("DATA/Popularity-LatinAmerica-BR.csv")
 d <- read_sheet("https://docs.google.com/spreadsheets/d/1ryF9r-kQdu3QRbRynJuI6xH0KofkHb6cZlWrngZiHzU/edit?usp=sharing")
 
@@ -41,14 +46,86 @@ tmp <- apply(is.na(subset(d, select = c(Date,President,PresidentS,Positive,Insti
 if(sum(tmp) > 0){cat("Attention! Data missing in source\n"); print(tmp)}
 
 d$Date <- as_date(d$Date)
+d <- d[sort(as.character(d$Date), index.return = TRUE)$ix,] #sort by date
+d$Q <- paste(substr(d$Date,1,5), quarters(d$Date), sep="") #quarter indicator
+d$Q <- gsub("Q", "", d$Q)
+d$M <- substr(d$Date, 1, 7)#month indicator
+d$raw.date <- NULL
 
 # Save table
 save(d, file = "R/popularity_raw_BR.RData")
-write.csv(d, 'DATA/popularity_raw_BR.csv')
-
-#fork: save Bolsonaro's popularity separately 
-dd <- subset(d, President == "Bolsonaro" & year >= 2019)
-save(dd,file="R/popularity_raw_bolsonaro_BR.RData") 
-write.csv(dd,'DATA/popularity_raw_bolsonaro_BR.csv')
 
 ```
+
+# 2. Functions
+
+```{r}
+
+observations <- wcalcdiagnosticsQ <-  wcalcdiagnosticsM <- list()
+
+#source("R/Extract.r") #load stimsons "extract" function (downloaded from internet)
+
+source("https://raw.githubusercontent.com/nataliatosi/nataliatosi/main/Agregador_BR/Formulas_Agregador.R")
+#source("https://raw.githubusercontent.com/nataliatosi/nataliatosi/main/Agregador_BR/R/Extract.r")
+```
+
+
+# 3. Setting
+
+## 3.1. Create empty dataframe for merging results later
+
+```{r}
+#### Merge estimates into d dataset for plotting ####
+Ms <- expand.grid(1980:2017, sprintf("%02.0f", 1:12))
+Ms <- sort(paste(Ms[,1],Ms[,2], sep = "-"))
+Qs <- gsub("-01|-02|-03","-1", 
+           gsub("-04|-05|-06","-2",
+                gsub("-07|-08|-09","-3",
+                     gsub("-10|-11|-12","-4", Ms))))
+MQ <- data.frame(M = Ms,Q = Qs)
+
+#define a month
+m1 <- 365/12	
+
+```
+
+
+# 4. Prepare data from stimsons' wcalc
+
+```{r}
+### The simple averaging approach ##################		
+ms <- my.averageM(d)  #by month
+qs <- my.averageQ(d)  #by quarter
+
+#For WCalc, start by saving the info of which pres to use into data
+#this is to make sure only "incoming" presidents are used when
+#there are more than one per time period
+#this should not affect monthly latent estimates
+#but definitely affects quarterly
+
+d <- merge(d, subset(ms, select = c(M,presUsed)), by = "M", all.x = T) 
+d$useM <- d$PresidentS == d$presUsed
+
+d$Varname <-  gsub("\\s","", d$Institute)
+d$Index <- d$Positive
+
+```
+
+
+```{r}
+
+ds <- d %>%
+  select (Varname, Date, Index, PresidentS, Q, M, useM)
+
+obs_pollster <- ds %>%
+  count(Varname) %>%
+  arrange(desc(n))
+
+kable(obs_pollster, caption = "Observation by pollster in dataset\n")
+
+```
+
+
+
+
+
