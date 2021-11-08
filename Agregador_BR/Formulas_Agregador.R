@@ -417,8 +417,8 @@ dominate <- function(fb, issue, nperiods, nvar, mood, valid, smoothing, alpha) {
 } #end dominate algorithm  
 ##########################################################################################
 
-#begindt<-NA #ISOdate(2004,6,1)
-#enddt<-NA #ISOdate(2004,10,31)
+#begindt <- NA #ISOdate(2004,6,1)
+#enddt <- NA #ISOdate(2004,10,31)
 
 
 ## MAIN EXTRACT CODE BEGINS HERE #########################################################
