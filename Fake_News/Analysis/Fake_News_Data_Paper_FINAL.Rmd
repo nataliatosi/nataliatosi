@@ -17,12 +17,15 @@ knitr::opts_chunk$set(
   )
 
 options(scipen = 999)
+rm(list = ls())
 
 library(tidyverse)
 library(broom) 
 library(stargazer)
 library(knitr)
 library(car)
+library(DescTools)
+
 
 ```
 
@@ -34,25 +37,6 @@ data_code <- read_csv("fake_news_data_code.csv") %>%
   select(-1)
 
 ```
-
-\bigskip
-
-# Paper Research Questions (ORIGINAL)
-
-\bigskip
-
-  - RQ1. How do demographics (age, gender, political orientation and income), affect the probability to share political fake news online?
-  
-  - RQ2. What is the interaction between political orientation and gender?
-  
-  - RQ3. How does the perception of frequency of political fake news online affect the
-probability to share them?
-
-  - RQ4. How does previous online fake news sharing (unnoticed), affect the probability
-to share political fake news online (on purpose)?
-
-  - RQ5. How does the perception of responsibility of 1) members of the public, 2)
-government, politicians and elected officials and 3) Facebook and Twitter, in trying to prevent fake news affect the probability to share them online?
 
 \bigskip
 
@@ -95,29 +79,11 @@ P19 - Have you ever shared a political news story online that you thought at the
 
 1) Gender
 2) Age
-4) Income (try class and income)
-5) Political Orientation
+4) Income (class)
+5) Education
+6) Political Orientation
+7) Religion (Evangelical)
 
-
-\bigskip
-
-"Data for the demographic variables (i.e., gender, age, income, education and political orientation) were collected using standard survey measurements. 
-
-\bigskip
-
-The perception of frequency of political fake news was measured by asking participants the following question: “How often do you come across news stories online that you think are almost completely made up”, on a four‐point Likert scale, ranging from 1) never, 2) hardly ever, 3) sometimes and, 4) often. 
-
-\bigskip
-
-Unnoticed fake news sharing was measured by asking participants the following question: “Have you ever shared a political news story online that you later found out was made up? (0) No and (1) yes. 
-
-\bigskip
-
-The perception of responsibility was measured by asking participants the following question: “As you may have heard, there have recently been some instances of so called “fake news stories” circulating widely online. 
-
-\bigskip
-
-How much responsibility does each of the following have in trying to prevent made up stories from gaining attention” a) members of the public, b) the government, politicians, and elected officials, c) social networking sites like Facebook and Twitter, and search sites like Google, on a four‐point Likert scale, ranging from: 1) no responsibility at all, 2) not much responsibility, 3) a fair amount of responsibility, 4) a great deal of responsibility."
 
 \bigskip
 
@@ -159,20 +125,6 @@ data_fake_news <- data_code %>%
 \bigskip
 
 # Regressions - All categories
-
-\bigskip
-
-Dependent variable: `shared_fake_news_19`
-
-\bigskip
-
-Independent variables:
-
-1) Gender
-2) Age
-4) Income (class)
-5) Education
-6) Political Orientation
 
 
 \bigskip
@@ -290,69 +242,6 @@ stargazer(reg_1, reg_2, reg_3, reg_4, reg_5,
 ```
 
 
-
-```{r}
-
-library(DescTools)
-library(mfx)
-
-reg_1_or <- logitor(shared_fake_news_19 ~ sex_men + age_full + class_ab + 
-               class_c + pol_orientation_right + pol_orientation_center +
-               pol_orientation_left + education_high + religion_Evangelicals,
-               data = data_fake_news)
-
-
-reg_2_or <- logitor(shared_fake_news_19 ~ frequency_fake_news + sex_men + age_full + class_ab + 
-               class_c + pol_orientation_right + pol_orientation_center +
-               pol_orientation_left + education_high + religion_Evangelicals,
-               data = data_fake_news)
-
-reg_3_or <- logitor(shared_fake_news_19 ~ unnoticed_share + frequency_fake_news + 
-               sex_men + age_full + class_ab + class_c + pol_orientation_right + 
-               pol_orientation_center + pol_orientation_left + education_high +
-               religion_Evangelicals,
-               data = data_fake_news)
-
-reg_4_or <- logitor(shared_fake_news_19 ~ resp_population + resp_gov_politicians + 
-               resp_social_media + unnoticed_share + frequency_fake_news + 
-               sex_men + age_full + class_ab + class_c + pol_orientation_right + 
-               pol_orientation_center + pol_orientation_left + education_high +
-               religion_Evangelicals,
-               data = data_fake_news)
-
-reg_5_or <- logitor(shared_fake_news_19 ~ resp_population + resp_gov_politicians + 
-               resp_social_media + unnoticed_share + frequency_fake_news + 
-               sex_men + age_full + class_ab + class_c + pol_orientation_right + 
-               pol_orientation_center + pol_orientation_left + education_high + 
-               sex_men*pol_orientation_right + sex_men*pol_orientation_center + 
-               sex_men*pol_orientation_left + religion_Evangelicals,
-               data = data_fake_news)
-
-```
-
-```{r, results = 'asis', message = FALSE, echo = FALSE}
-
-stargazer(reg_1_or, reg_2_or, reg_3_or, reg_4_or, reg_5_or,
-          title = "Likelihood of Sharing Fake News - Logit Models (Odds Ratio)", 
-          type = "latex", 
-          digits = 3, 
-          no.space = TRUE, 
-          model.numbers = FALSE,
-          dep.var.labels = c("Shared FN"),
-          column.labels = c("Model 1", "Model 2", "Model 3", "Model 4", "Model 5"),
-          covariate.labels = c("Resp. Pop", "Resp. Gov", "Resp. SM", "Unnoticed FN",
-                               "FN Freq", "Gender(male)", "Age", "Class AB", "Class C",
-                               "Politics (R)", "Politics (C)", "Politics (L)", "Educated",
-                               "Evangelical", "Gender(male)*Pol(R)", "Gender(male)*Pol(C)",
-                               "Gender(male)*Pol(L)"),
-          header = FALSE,
-          font.size = "small",
-          column.sep.width = "-15pt",
-          add.lines = list(c("Nagelkerke R$^2$", "0.021", "0.036", "0.247", "0.248","0.252"),
-                           c("Cox and Snell R$^2$", "0.013", "0.023", "0.159", "0.16", "0.162")))
-
-```
-
 ```{r, eval = FALSE, echo = FALSE}
 
 cox_snell_R2 <- as.tibble(t(c("reg_1", "reg_2", "reg_3", "reg_4", "reg_5"))) 
@@ -384,23 +273,17 @@ nagelkerke_R2
 ```
 
 
-```{r, eval = FALSE, echo = FALSE}
 
-generate_pseudo_r2 <- function(x){
-  NagelkerkeR2(x)[[2]]
-}
+```{r}
 
-generate_pseudo_r2(regressions[5])
+plogis(coef(reg_1))
 
-output <- vector("double", 5) # output 
 
-for (i in seq_along(regressions)) { # sequence
-  output[[i]] <- generate_pseudo_r2(regressions[[i]]) # body 
-}
+odds <- exp(coef(reg_1))
 
-regressions[[1]]
+probability <-  odds / (1 + odds)
+probability
 
-seq_along(regressions)
 
 ```
 

@@ -1,0 +1,234 @@
+---
+title: "Fake News Data - Correlation"
+author: "Natália Tosi"
+date: "08/18/2021"
+output: pdf_document
+---
+
+```{r message = FALSE, warning = FALSE, include = FALSE}
+
+knitr::opts_chunk$set(
+  echo = TRUE,
+  message = FALSE,
+  warning = FALSE,
+  fig.align = "center",
+  fig.width = 8, 
+  fig.height = 4
+  )
+
+options(scipen = 999)
+rm(list=ls())
+
+library(tidyverse)
+library(broom) 
+library(stargazer)
+library(knitr)
+library(car)
+library(Hmisc)
+library(kableExtra)
+
+```
+
+\bigskip
+
+```{r}
+
+data_code <- read_csv("fake_news_data_code.csv") %>%
+  select(-1)
+
+```
+
+\bigskip
+
+
+# Model Variables
+
+
+\bigskip
+
+**Dependent Variable = Shared Fake News (`shared_fake_news_19`)** 
+
+\bigskip
+
+P19 - Have you ever shared a political news story online that you thought at the time was made up? (Single Answer)
+
+1 = Yes; 0 = No
+
+\bigskip
+
+**Independent Variables**
+
+\bigskip
+
+1) Gender
+2) Age
+4) Income (class)
+5) Education
+6) Political Orientation
+7) Religion (Evangelicals)
+
+\bigskip
+
+# Data
+
+\bigskip
+
+- P19 = shared_fake_news
+- frequency_fake_news
+- P21 = unnoticed_share
+- public
+- gov and politicians (create one single)
+- social media
+
+```{r}
+
+data_fake_news <- data_code %>%
+  select(sex, age_full, age_60, pol_orientation, P19, frequency_fake_news, P21,
+         resp_population, resp_gov, resp_politicians, resp_press, 
+         resp_social_media, severity_fake_news, shared_fake_news_19, education, 
+         income, class, religion, evaluation, approval, shared_fake_news_19, 
+         race_adj, sex_men, region_North, region_Northeast, `region_Center-West`,
+         region_Southeast, region_South, religion_Catholic, religion_Evangelicals,
+         `religion_Other religion`, `religion_No religion`, `age_60_16-24 age`, 
+         `age_60_25-34 age`, `age_60_35-44 age`, `age_60_45-59 age`, 
+          `age_60_60 or more`, evaluation_Unsure, P21_No, P21_Unsure, P21_Yes,
+         capital_metrop, pol_orientation_right, pol_orientation_center,
+         pol_orientation_left, pol_orientation_none, race_is_white,
+         education_high, income_low, class_ab, class_c, class_de, has_religion) %>%
+  rename(unnoticed_share = P21_Yes) %>%
+  mutate(resp_gov_politicians = if_else(((resp_gov == 1) | (resp_politicians == 1)), 
+                                        1, 0),
+         sex_women = if_else(sex_men == 0, 1, 0))
+
+```
+
+\bigskip
+
+# Correlation Matrix
+
+\bigskip
+
+```{r}
+
+variables <- c("sex_men", "age_full", "class_ab", "class_c", "pol_orientation_right", 
+               "pol_orientation_center", "pol_orientation_left", "education_high", 
+               "religion_Evangelicals", "frequency_fake_news", "unnoticed_share",
+               "resp_population", "resp_gov_politicians", "resp_social_media")
+                              
+
+
+variables_rename <- c("Gender(male)", "Age", "Class AB", "Class C", "Politics (R)", 
+                      "Politics (C)", "Politics (L)", "Educated", "Evangelical",
+                      "FN Freq", "Unnoticed FN", "Resp. Pop", "Resp. Gov", 
+                      "Resp. SM")
+
+```
+
+
+```{r}
+
+correlation_matrix <- function(df, 
+                               type = "pearson",
+                               digits = 3, 
+                               decimal.mark = ".",
+                               use = "all", 
+                               show_significance = TRUE, 
+                               replace_diagonal = FALSE, 
+                               replacement = ""){
+  
+  # check arguments
+  stopifnot({
+    is.numeric(digits)
+    digits >= 0
+    use %in% c("all", "upper", "lower")
+    is.logical(replace_diagonal)
+    is.logical(show_significance)
+    is.character(replacement)
+  })
+  # we need the Hmisc package for this
+  require(Hmisc)
+  
+  # retain only numeric and boolean columns
+  isNumericOrBoolean = vapply(df, function(x) is.numeric(x) | is.logical(x), logical(1))
+  if (sum(!isNumericOrBoolean) > 0) {
+    cat('Dropping non-numeric/-boolean column(s):', paste(names(isNumericOrBoolean)[!isNumericOrBoolean], collapse = ', '), '\n\n')
+  }
+  df = df[isNumericOrBoolean]
+  
+  # transform input data frame to matrix
+  x <- as.matrix(df)
+  
+  # run correlation analysis using Hmisc package
+  correlation_matrix <- Hmisc::rcorr(x, type = )
+  R <- correlation_matrix$r # Matrix of correlation coeficients
+  p <- correlation_matrix$P # Matrix of p-value 
+  
+  # transform correlations to specific character format
+  Rformatted = formatC(R, format = 'f', digits = digits, decimal.mark = decimal.mark)
+  
+  # if there are any negative numbers, we want to put a space before the positives to align all
+  if (sum(R < 0) > 0) {
+    Rformatted = ifelse(R > 0, paste0(' ', Rformatted), Rformatted)
+  }
+  
+  # add significance levels if desired
+  if (show_significance) {
+    # define notions for significance levels; spacing is important.
+    stars <- ifelse(is.na(p), "   ", ifelse(p < .001, "***", ifelse(p < .01, "** ", ifelse(p < .05, "*  ", "   "))))
+    Rformatted = paste0(Rformatted, stars)
+  }
+  # build a new matrix that includes the formatted correlations and their significance stars
+  Rnew <- matrix(Rformatted, ncol = ncol(x))
+  rownames(Rnew) <- colnames(x)
+  colnames(Rnew) <- paste(colnames(x), "", sep =" ")
+  
+  # replace undesired values
+  if (use == 'upper') {
+    Rnew[lower.tri(Rnew, diag = replace_diagonal)] <- replacement
+  } else if (use == 'lower') {
+    Rnew[upper.tri(Rnew, diag = replace_diagonal)] <- replacement
+  } else if (replace_diagonal) {
+    diag(Rnew) <- replacement
+  }
+  
+  return(Rnew)
+}
+
+```
+
+
+```{r}
+data_fake_news <- data_fake_news[, variables]
+
+colnames(data_fake_news) <- variables_rename
+
+correlation <- correlation_matrix(data_fake_news)
+
+correlation_1 <- correlation[,c(1:7)]
+
+correlation_2 <- correlation[,c(8:14)]
+```
+
+
+\newpage
+
+```{r}
+
+kable(correlation_1, caption = "Correlations between independent variables",
+      booktabs = T, linesep = "") %>%
+  kable_styling(latex_options = "striped", font_size = 8) %>% 
+  row_spec(0, bold = TRUE)
+
+```
+
+
+```{r}
+
+kable(correlation_2, caption = "Correlations between independent variables",
+      booktabs = T, linesep = "") %>%
+  kable_styling(latex_options = "striped", font_size = 8) %>% 
+  row_spec(0, bold = TRUE)
+
+```
+
+
